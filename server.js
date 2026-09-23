@@ -14,14 +14,33 @@ const PORT = 3000;
 const ordersFile = path.join(__dirname, "data/orders.json");
 
 // ========================
-// 🛡️ SÉCURITÉ
+// 🔒 SÉCURITÉ
 // ========================
-app.use(helmet());
 
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https:", "http:"],
+      frameSrc: ["'self'", "https:", "http:"],
+      connectSrc: ["'self'", "https:", "http:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:", "http:"],
+      imgSrc: ["'self'", "data:", "https:", "http:"],
+      fontSrc: ["'self'", "https:", "http:"]
+    }
+  }
+}));
+
+// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  message: "Trop de requêtes depuis cette IP, réessayez plus tard."
+  windowMs: 15 * 60 * 1000,
+  max: 100
 });
 app.use('/api/', limiter);
 
@@ -30,7 +49,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 
 // ========================
-// 📋 ROUTES CONFIG
+// 🔧 CONFIG & PRODUITS
 // ========================
 
 app.get('/api/paypal-config', (req, res) => {
@@ -42,226 +61,156 @@ app.get("/api/config", (req, res) => {
 });
 
 app.get("/api/products", (req, res) => {
-  const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data/products.json"), "utf-8"));
-  res.json(data);
+  try {
+    const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data/products.json"), "utf-8"));
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur chargement produits" });
+  }
 });
 
 // ========================
-// 💳 ROUTES PAYPAL
+// 💳 PAYPAL - CREATE ORDER
 // ========================
 
-app.post("/api/paypal/create-order", (req, res) => {
-  const { items, total, pickup } = req.body;
+app.post("/api/paypal/create-order", async (req, res) => {
+  try {
+    const { items, total, customer } = req.body;
 
-  fetch("https://api-m.sandbox.paypal.com/v2/checkout/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Basic ${Buffer.from(
-        process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
-      ).toString("base64")}`
-    },
-    body: JSON.stringify({
-      intent: "CAPTURE",
-      purchase_units: [
-        {
-          amount: {
-            currency_code: "EUR",
-            value: total.toFixed(2),
-            breakdown: {
-              item_total: { currency_code: "EUR", value: (total - (pickup ? 0 : 3.99)).toFixed(2) },
-              shipping: { currency_code: "EUR", value: (pickup ? 0 : 3.99).toFixed(2) }
+    if (!items || !total || !customer) {
+      return res.status(400).json({ error: "Données manquantes" });
+    }
+
+    const response = await fetch(
+      "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${Buffer.from(
+            process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
+          ).toString("base64")}`
+        },
+        body: JSON.stringify({
+          intent: "CAPTURE",
+          purchase_units: [{
+            amount: {
+              value: parseFloat(total).toFixed(2),
+              currency_code: "EUR"
             }
-          },
-          items: items.map(item => ({
-            name: item.name,
-            unit_amount: { currency_code: "EUR", value: item.price.toFixed(2) },
-            quantity: item.qty.toString()
-          }))
-        }
-      ]
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.id) {
-        res.json({ orderId: data.id });
-      } else {
-        res.status(400).json({ error: data });
+          }]
+        })
       }
-    })
-    .catch(err => res.status(500).json({ error: err.message }));
+    );
+
+    const order = await response.json();
+
+    if (!order.id) {
+      return res.status(400).json({ error: "Erreur création commande PayPal" });
+    }
+
+    res.json({ orderId: order.id });
+  } catch (err) {
+    console.error("❌ Erreur create-order :", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Capture la commande PayPal après approbation du client
-app.post("/api/paypal/capture-order",
+// ========================
+// 💳 PAYPAL - CAPTURE ORDER
+// ========================
+
+app.post("/api/paypal/capture-order", async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: "OrderID manquant" });
+    }
+
+    const response = await fetch(
+      `https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${Buffer.from(
+            process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
+          ).toString("base64")}`
+        }
+      }
+    );
+
+    const orderData = await response.json();
+
+    if (orderData.status === "COMPLETED") {
+      console.log("✅ Commande PayPal validée :", orderData.id);
+      res.json({ success: true, transactionId: orderData.id });
+    } else {
+      res.status(400).json({ error: "Paiement non complété", status: orderData.status });
+    }
+  } catch (err) {
+    console.error("❌ Erreur capture-order :", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ========================
+// 📦 ENREGISTREMENT COMMANDE
+// ========================
+
+app.post("/api/order", 
   [
     body('customer.name').trim().escape().notEmpty(),
     body('customer.email').isEmail().normalizeEmail(),
-    body('customer.address').trim().escape().optional()
   ],
-  async (req, res) => {
+  (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { orderId, customer, items, total, pickup } = req.body;
-
     try {
-      const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Basic ${Buffer.from(
-            process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
-          ).toString("base64")}`
-        }
-      });
+      const order = req.body;
+      order.date = new Date().toISOString();
 
-      const data = await captureResponse.json();
-
-      if (data.status === "COMPLETED") {
-        const order = {
-          orderId: data.id,
-          date: new Date().toISOString(),
-          customer: {
-            name: customer.name,
-            email: customer.email,
-            address: customer.address || "",
-            pickup: pickup || false
-          },
-          items: items,
-          total: parseFloat(total),
-          shipping: pickup ? 0 : 3.99,
-          paypalTransactionId: data.id
-        };
-
-        let orders = [];
-        if (fs.existsSync(ordersFile)) {
-          orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
-        }
-        orders.push(order);
-        fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
-        console.log("✅ Commande enregistrée :", order.orderId);
-
-        try {
-          const invoicePath = path.join(__dirname, `invoices/facture_${orderId}.pdf`);
-          await generateInvoice(order, invoicePath);
-          console.log("✅ Facture générée :", invoicePath);
-
-          const emailSent = await sendInvoiceEmail(
-            customer.email,
-            customer.name,
-            invoicePath,
-            order
-          );
-
-          if (emailSent) {
-            console.log("✅ Email envoyé à :", customer.email);
-          } else {
-            console.warn("⚠️ Email non envoyé mais commande validée");
-          }
-        } catch (invoiceError) {
-          console.error("⚠️ Erreur lors de la génération/envoi de la facture :", invoiceError.message);
-        }
-
-        res.json({
-          success: true,
-          transactionId: data.id,
-          message: "Commande validée ! Facture envoyée par email."
-        });
-      } else {
-        res.status(400).json({ error: "Paiement non complété", status: data.status });
+      let orders = [];
+      if (fs.existsSync(ordersFile)) {
+        orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
       }
+      orders.push(order);
+      fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
+
+      // Génère la facture PDF
+      const invoicePath = generateInvoice(order);
+
+      // Envoie par email
+      if (order.customer.email) {
+        sendInvoiceEmail(order.customer.email, order.customer.name, invoicePath);
+      }
+
+      console.log("✅ Commande enregistrée :", order.orderId || order.transactionId);
+      res.json({ success: true, invoicePath });
     } catch (err) {
-      console.error("❌ Erreur lors de la capture PayPal :", err);
+      console.error("❌ Erreur enregistrement commande :", err);
       res.status(500).json({ error: err.message });
     }
   }
 );
 
 // ========================
-// 📦 ROUTES COMMANDES
+// 🛡️ ERROR HANDLER
 // ========================
 
-app.post("/api/order", async (req, res) => {
-  try {
-    const { orderId, customer, items, total, pickup } = req.body;
-
-    const order = {
-      orderId,
-      date: new Date().toISOString(),
-      customer: {
-        name: customer.name,
-        email: customer.email,
-        address: customer.address || "",
-        pickup: pickup || false
-      },
-      items: items,
-      total: parseFloat(total),
-      shipping: pickup ? 0 : 3.99
-    };
-
-    let orders = [];
-    if (fs.existsSync(ordersFile)) {
-      orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
-    }
-    orders.push(order);
-    fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
-    console.log("✅ Commande enregistrée :", order.orderId);
-
-    try {
-      const invoicePath = path.join(__dirname, `invoices/facture_${orderId}.pdf`);
-      await generateInvoice(order, invoicePath);
-      console.log("✅ Facture générée :", invoicePath);
-
-      await sendInvoiceEmail(
-        customer.email,
-        customer.name,
-        invoicePath,
-        order
-      );
-      console.log("✅ Email envoyé à :", customer.email);
-    } catch (invoiceError) {
-      console.error("⚠️ Erreur facture :", invoiceError.message);
-    }
-
-    res.json({
-      success: true,
-      invoicePath: `/invoices/facture_${orderId}.pdf`,
-      message: "Commande validée et facture envoyée !"
-    });
-  } catch (error) {
-    console.error("❌ Erreur lors du traitement de la commande :", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.get("/api/orders", (req, res) => {
-  try {
-    if (fs.existsSync(ordersFile)) {
-      const orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
-      res.json(orders);
-    } else {
-      res.json([]);
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========================
-// ⚠️ GESTION D'ERREURS (doit être en dernier, avant listen)
-// ========================
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("❌ Erreur serveur :", err.stack);
   res.status(500).json({ error: "Une erreur est survenue, réessayez plus tard." });
 });
 
 // ========================
-// 🚀 LANCEMENT
+// 🚀 DÉMARRAGE
 // ========================
+
 app.listen(PORT, () => {
-  console.log(`\n🎃 EM3DSHOP lancé ! Ouvre ton navigateur sur : http://localhost:${PORT}\n`);
+  console.log(`\n🎃 ME3DSHOP lancé ! Ouvre : http://localhost:${PORT}\n`);
 });

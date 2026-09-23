@@ -1,9 +1,5 @@
 let cart = [];
-let paypalSdkReady = false;
-
-document.addEventListener("paypal-sdk-ready", () => {
-  paypalSdkReady = true;
-});
+let paypalButtonRendered = false;
 
 function addToCart(product) {
   const existing = cart.find(item => item.id === product.id);
@@ -32,8 +28,10 @@ function updateCartUI() {
     div.className = "cart-item";
     div.innerHTML = `
       <img src="images/${currentTheme}/${item.images[0]}" alt="${item.name}">
-      <div>${item.name} x${item.qty}</div>
-      <div>${(item.price * item.qty).toFixed(2)}€</div>
+      <div>
+        <strong>${item.name}</strong><br>
+        x${item.qty} = ${(item.price * item.qty).toFixed(2)}€
+      </div>
       <span class="cart-item-remove" data-id="${item.id}">✕</span>
     `;
     itemsEl.appendChild(div);
@@ -49,45 +47,109 @@ function updateCartUI() {
 function updateTotals() {
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const pickup = document.getElementById("pickup-checkbox").checked;
-  const shippingCost = pickup ? 0 : appConfig.shipping.price;
+  const shippingCost = pickup ? 0 : 3.99;
 
   document.getElementById("cart-subtotal").textContent = subtotal.toFixed(2) + "€";
   document.getElementById("cart-shipping").textContent = shippingCost.toFixed(2) + "€";
   document.getElementById("cart-total").textContent = (subtotal + shippingCost).toFixed(2) + "€";
 
-  // Si le panier change, on remet le bouton "Passer au paiement" et on cache PayPal
   document.getElementById("proceed-to-payment").classList.remove("hidden");
-  document.getElementById("paypal-button-container").classList.add("hidden");
-  document.getElementById("paypal-button-container").innerHTML = "";
+  closePayPalModal();
 }
 
-document.getElementById("pickup-checkbox").addEventListener("change", () => {
+document.addEventListener("DOMContentLoaded", () => {
+  const pickupCheckbox = document.getElementById("pickup-checkbox");
   const addressField = document.getElementById("customer-address");
-  addressField.disabled = document.getElementById("pickup-checkbox").checked;
-  updateTotals();
-});
 
-document.getElementById("cart-icon").addEventListener("click", () => {
-  document.getElementById("cart-panel").classList.remove("hidden");
-  document.getElementById("overlay").classList.remove("hidden");
-});
+  pickupCheckbox.addEventListener("change", () => {
+    if (pickupCheckbox.checked) {
+      addressField.value = "";
+      addressField.disabled = true;
+    } else {
+      addressField.disabled = false;
+    }
+    updateTotals();
+  });
 
-document.getElementById("cart-close").addEventListener("click", closeCart);
-document.getElementById("overlay").addEventListener("click", closeCart);
+  document.getElementById("cart-icon").addEventListener("click", () => {
+    document.getElementById("cart-panel").classList.remove("hidden");
+    document.getElementById("overlay").classList.remove("hidden");
+  });
+
+  document.getElementById("cart-close").addEventListener("click", closeCart);
+  document.getElementById("overlay").addEventListener("click", closeCart);
+
+  // ⭐ MODAL PayPal
+  document.getElementById("paypal-modal-close").addEventListener("click", closePayPalModal);
+
+  document.getElementById("proceed-to-payment").addEventListener("click", handlePaymentClick);
+});
 
 function closeCart() {
   document.getElementById("cart-panel").classList.add("hidden");
   document.getElementById("overlay").classList.add("hidden");
 }
 
-function renderPayPalButton(total) {
+function closePayPalModal() {
+  document.getElementById("paypal-modal").classList.add("hidden");
+  document.getElementById("paypal-button-container").innerHTML = "";
+  paypalButtonRendered = false;
+}
+
+function handlePaymentClick() {
+  const name = document.getElementById("customer-name").value.trim();
+  const email = document.getElementById("customer-email").value.trim();
+  const pickup = document.getElementById("pickup-checkbox").checked;
+  const address = document.getElementById("customer-address").value.trim();
+  const cguChecked = document.getElementById("cgu-checkbox").checked;
+
+  if (!name || !email) {
+    alert("❌ Merci de renseigner votre nom et votre email.");
+    return;
+  }
+
+  if (!cguChecked) {
+    alert("❌ Merci d'accepter les CGV et la Politique de Confidentialité.");
+    return;
+  }
+
+  if (!pickup && !address) {
+    alert("❌ Merci de renseigner une adresse de livraison, ou cochez le retrait en main propre.");
+    return;
+  }
+
+  if (cart.length === 0) {
+    alert("❌ Votre panier est vide.");
+    return;
+  }
+
+  console.log("✅ Validation OK ! Affichage de PayPal...");
+
+  // ⭐ Ouvre le MODAL au lieu de popup
+  document.getElementById("paypal-modal").classList.remove("hidden");
+
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const shippingCost = pickup ? 0 : 3.99;
+  const total = subtotal + shippingCost;
+
+  const customer = { name, email, address, pickup };
+
+  if (!paypalButtonRendered) {
+    renderPayPalButton(total, customer);
+    paypalButtonRendered = true;
+  }
+}
+
+function renderPayPalButton(total, customer) {
   const container = document.getElementById("paypal-button-container");
   container.innerHTML = "";
 
-  if (cart.length === 0 || !window.paypal || !paypalSdkReady) return;
+  if (cart.length === 0 || !window.paypal) {
+    console.error("❌ Panier vide ou PayPal SDK non chargé");
+    return;
+  }
 
   paypal.Buttons({
-    // Crée la commande côté SERVEUR
     createOrder: async (data, actions) => {
       try {
         const res = await fetch("/api/paypal/create-order", {
@@ -95,97 +157,63 @@ function renderPayPalButton(total) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             items: cart,
-            total: total,
-            pickup: document.getElementById("pickup-checkbox").checked
+            total: total.toFixed(2),
+            customer: customer
           })
         });
+
         const orderData = await res.json();
+        console.log("✅ Commande créée :", orderData.orderId);
         return orderData.orderId;
       } catch (err) {
-        console.error("Erreur création commande :", err);
-        actions.reject();
+        console.error("❌ Erreur create-order :", err);
+        alert("❌ Erreur création commande");
+        throw err;
       }
     },
 
-    // Capture la commande après approbation du client
     onApprove: async (data, actions) => {
       try {
-        const name = document.getElementById("customer-name").value;
-        const email = document.getElementById("customer-email").value;
-        const address = document.getElementById("customer-address").value;
-        const pickup = document.getElementById("pickup-checkbox").checked;
-
-        // Capture côté SERVEUR
-        const captureRes = await fetch("/api/paypal/capture-order", {
+        const res = await fetch("/api/paypal/capture-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: data.orderID,
-            customer: { name, email, address, pickup },
-            items: cart,
-            total: total.toFixed(2)
-          })
+          body: JSON.stringify({ orderId: data.orderID })
         });
 
-        const captureData = await captureRes.json();
+        const orderData = await res.json();
 
-        if (captureData.success) {
-          alert("✅ Merci " + name + " ! Votre commande a bien été validée.\nNuméro de transaction : " + captureData.transactionId);
+        if (orderData.success) {
+          // ✅ Enregistre la commande
+          await fetch("/api/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: data.orderID,
+              customer: customer,
+              items: cart,
+              total: total.toFixed(2),
+              pickup: customer.pickup,
+              transactionId: orderData.transactionId
+            })
+          });
+
+          alert("✅ Paiement validé ! Facture envoyée par email.");
           cart = [];
           updateCartUI();
+          closePayPalModal();
           closeCart();
         } else {
-          alert("❌ Erreur lors de la capture du paiement : " + captureData.error);
+          alert("❌ Erreur : " + (orderData.error || "Paiement non complété"));
         }
       } catch (err) {
-        console.error("Erreur validation :", err);
-        alert("Une erreur est survenue. Contacter le support.");
+        console.error("❌ Erreur capture-order :", err);
+        alert("❌ Erreur de paiement. Réessayez.");
       }
     },
 
-    onError: function(err) {
-      alert("❌ Une erreur est survenue avec le paiement. Réessayez.");
-      console.error(err);
+    onError: (err) => {
+      console.error("❌ Erreur PayPal :", err);
+      alert("❌ Erreur de paiement. Réessayez.");
     }
   }).render("#paypal-button-container");
 }
-
-document.getElementById("proceed-to-payment").addEventListener("click", () => {
-  const name = document.getElementById("customer-name").value.trim();
-  const email = document.getElementById("customer-email").value.trim();
-  const cgvAccepted = document.getElementById("cgv-checkbox").checked;
-
-  if (!cgvAccepted) {
-    alert("Merci d'accepter les CGV et mentions légales avant de continuer.");
-    return;
-  }
-
-  if (!name || !email) {
-    alert("Merci de renseigner votre nom et votre email avant de continuer.");
-    return;
-  }
-
-  // ... reste du code existant
-
-  if (!pickup && !address) {
-    alert("Merci de renseigner une adresse de livraison, ou cochez le retrait en main propre.");
-    return;
-  }
-
-  if (cart.length === 0) {
-    alert("Votre panier est vide.");
-    return;
-  }
-
-  if (!paypalSdkReady) {
-    alert("Le module de paiement PayPal est en cours de chargement, réessayez dans quelques secondes.");
-    return;
-  }
-
-  document.getElementById("proceed-to-payment").classList.add("hidden");
-  document.getElementById("paypal-button-container").classList.remove("hidden");
-
-  const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const shippingCost = pickup ? 0 : appConfig.shipping.price;
-  renderPayPalButton(subtotal + shippingCost);
-});

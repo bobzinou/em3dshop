@@ -49,48 +49,74 @@
 </div>
 
 <!-- PANIER -->
+<!-- PANIER -->
 <div id="cart-panel" class="cart-panel hidden">
   <div class="cart-header">
     <h2>Votre panier</h2>
     <span id="cart-close" class="lightbox-close">&times;</span>
   </div>
+  <!-- Dans ton cart-panel, avant la fermeture -->
+<div id="paypal-modal" class="paypal-modal hidden">
+  <div class="paypal-modal-content">
+    <span id="paypal-modal-close" class="lightbox-close">&times;</span>
+    <h3>Sécurisation du paiement PayPal</h3>
+    <div id="paypal-button-container"></div>
+  </div>
+</div>
   <div id="cart-items"></div>
+  
+  <!-- ✅ FORMULAIRE CLIENT -->
+  <div class="checkout-form">
+    <h3>Infos de livraison</h3>
+    
+    <input 
+      type="text" 
+      id="customer-name" 
+      placeholder="Nom complet" 
+      required
+    >
+    
+    <input 
+      type="email" 
+      id="customer-email" 
+      placeholder="Email" 
+      required
+    >
+    
+    <textarea 
+      id="customer-address" 
+      placeholder="Adresse de livraison"
+      rows="3"
+    ></textarea>
+    
+    <!-- ✅ CHECKBOX RETRAIT EN MAIN PROPRE -->
+    <div class="pickup-option">
+      <label>
+        <input type="checkbox" id="pickup-checkbox">
+        Retrait en main propre (gratuit)
+      </label>
+    </div>
+    
+    <!-- ✅ CHECKBOX CGV -->
+    <div class="cgu-option">
+      <label>
+        <input type="checkbox" id="cgu-checkbox">
+        J'accepte les CGV et la Politique de Confidentialité
+      </label>
+    </div>
+  </div>
+  
+  <!-- TOTAUX -->
   <div class="cart-footer">
     <p>Sous-total : <span id="cart-subtotal">0.00€</span></p>
     <p>Livraison : <span id="cart-shipping">3.99€</span></p>
     <p class="cart-total">Total : <span id="cart-total">0.00€</span></p>
-
-    <div class="pickup-option">
-      <label>
-        <input type="checkbox" id="pickup-checkbox">
-        Je récupère en main propre au Plessis-Bouchard (livraison gratuite)
-      </label>
-    </div>
-	<!-- ✅ AJOUTE ÇA SI PAS LÀ -->
-<div class="cgu-option">
-  <label>
-    <input type="checkbox" id="accept-cgu" required>
-    J'accepte les Conditions Générales d'Utilisation et la Politique de Confidentialité
-  </label>
-</div>
-
-
-    <div id="checkout-form" class="checkout-form">
-      <input type="text" id="customer-name" placeholder="Nom complet" required>
-      <input type="email" id="customer-email" placeholder="Email" required>
-      <textarea id="customer-address" placeholder="Adresse de livraison (laisser vide si retrait en main propre)"></textarea>
-    </div>
-
-<div class="cgv-check">
-  <label>
-    <input type="checkbox" id="cgv-checkbox">
-    J'accepte les <a href="/cgv.html" target="_blank">CGV</a> et les <a href="/mentions-legales.html" target="_blank">mentions légales</a>
-  </label>
-</div>
-
-
+    
+    <!-- ✅ BOUTON PAIEMENT -->
     <button id="proceed-to-payment" class="btn-primary">Passer au paiement</button>
-<div id="paypal-button-container" class="hidden"></div>
+    
+    <!-- ✅ CONTAINER PAYPAL -->
+    <div id="paypal-button-container" class="hidden"></div>
   </div>
 </div>
 
@@ -98,7 +124,6 @@
 
 <footer class="site-footer">
   <p>© 2026 ME3DSHOP — Impressions 3D artisanales — France</p>
-  <p><a href="/mentions-legales.html">Mentions légales</a> | <a href="/cgv.html">CGV</a></p>
 </footer>
 
 <script src="js/paypal-loader.js"></script>
