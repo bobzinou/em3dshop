@@ -1,0 +1,47 @@
+{
+  "halloween": [
+    {
+      "id": "citrouilles-lot3",
+      "name": "Lot de 3 citrouilles décoratives",
+      "category": "Décorations",
+      "price": 8.99,
+      "description": "Lot de 3 citrouilles décoratives imprimées en 3D, parfaites pour votre décoration d'Halloween.",
+      "images": ["citrouilles.png", "citrouille-2.png"]
+    },
+    {
+      "id": "faucheur",
+      "name": "Figurine Faucheur",
+      "category": "Figurines",
+      "price": 4.99,
+      "description": "Figurine du faucheur avec citrouille sculptée, impression 3D détaillée.",
+      "images": ["faucheur-1.png", "faucheur-dos.png"]
+    },
+    {
+      "id": "duo-fantomes",
+      "name": "Duo de fantômes éclairés",
+      "category": "Décorations",
+      "price": 10.99,
+      "description": "Duo de fantômes à éclairer (lumière non fournie), idéal pour illuminer votre déco d'Halloween.",
+      "images": ["duo-fantomes.png"]
+    },
+    {
+      "id": "citrouille-tricot",
+      "name": "Citrouille effet tricoté",
+      "category": "Décorations",
+      "price": 3.99,
+      "description": "Citrouille imprimée en 3D avec un effet tricoté très réaliste.",
+      "images": ["citrouille-tricote.png", "citrouille-tricote-dos.png"]
+    },
+    {
+      "id": "stitch-halloween",
+      "name": "Stitch d'Halloween",
+      "category": "Figurines",
+      "price": 19.99,
+      "description": "Figurine Stitch version Halloween avec chapeau de sorcier.",
+      "images": ["stitch-face.png", "stitch-cote.png", "stitch-dos.png"]
+    }
+  ],
+  "noel": [],
+  "figurines": [],
+  "hueforge": []
+}

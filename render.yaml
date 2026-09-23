@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: me3dshop
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PAYPAL_CLIENT_ID
+        scope: build,runtime
+      - key: PAYPAL_SECRET
+        scope: build,runtime
+      - key: PAYPAL_MODE
+        value: live
+      - key: EMAIL_USER
+        scope: build,runtime
+      - key: EMAIL_PASS
+        scope: build,runtime

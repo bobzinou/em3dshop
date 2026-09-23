@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EM3DSHOP - Impressions 3D</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">EM3DSHOP</div>
+    <nav class="theme-nav" id="theme-nav">
+      <!-- Boutons thèmes générés en JS -->
+    </nav>
+    <div class="cart-icon" id="cart-icon">
+      🛒 <span id="cart-count">0</span>
+    </div>
+  </div>
+</header>
+
+<section class="category-bar" id="category-bar">
+  <!-- Boutons catégories générés en JS -->
+</section>
+
+<main>
+  <div id="products-grid" class="products-grid">
+    <!-- Produits générés en JS -->
+  </div>
+</main>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" class="lightbox hidden">
+  <div class="lightbox-content">
+    <span class="lightbox-close" id="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="">
+    <div class="lightbox-nav">
+      <button id="lightbox-prev">‹</button>
+      <button id="lightbox-next">›</button>
+    </div>
+    <div class="lightbox-info">
+      <h3 id="lightbox-title"></h3>
+      <p id="lightbox-desc"></p>
+      <p class="lightbox-price" id="lightbox-price"></p>
+      <button id="lightbox-add-cart" class="btn-primary">Ajouter au panier</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANIER -->
+<div id="cart-panel" class="cart-panel hidden">
+  <div class="cart-header">
+    <h2>Votre panier</h2>
+    <span id="cart-close" class="lightbox-close">&times;</span>
+  </div>
+  <div id="cart-items"></div>
+  <div class="cart-footer">
+    <p>Sous-total : <span id="cart-subtotal">0.00€</span></p>
+    <p>Livraison : <span id="cart-shipping">3.99€</span></p>
+    <p class="cart-total">Total : <span id="cart-total">0.00€</span></p>
+
+    <div class="pickup-option">
+      <label>
+        <input type="checkbox" id="pickup-checkbox">
+        Je récupère en main propre au Plessis-Bouchard (livraison gratuite)
+      </label>
+    </div>
+
+    <div id="checkout-form" class="checkout-form">
+      <input type="text" id="customer-name" placeholder="Nom complet" required>
+      <input type="email" id="customer-email" placeholder="Email" required>
+      <textarea id="customer-address" placeholder="Adresse de livraison (laisser vide si retrait en main propre)"></textarea>
+    </div>
+
+<div class="cgv-check">
+  <label>
+    <input type="checkbox" id="cgv-checkbox">
+    J'accepte les <a href="/cgv.html" target="_blank">CGV</a> et les <a href="/mentions-legales.html" target="_blank">mentions légales</a>
+  </label>
+</div>
+
+<button id="proceed-to-payment" class="btn-primary">Passer au paiement</button>
+    <button id="proceed-to-payment" class="btn-primary">Passer au paiement</button>
+<div id="paypal-button-container" class="hidden"></div>
+  </div>
+</div>
+
+<div id="overlay" class="overlay hidden"></div>
+
+<footer class="site-footer">
+  <p>© 2026 ME3DSHOP — Impressions 3D artisanales — France</p>
+  <p><a href="/mentions-legales.html">Mentions légales</a> | <a href="/cgv.html">CGV</a></p>
+</footer>
+
+<script src="js/paypal-loader.js"></script>
+<script src="js/config.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/lightbox.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
