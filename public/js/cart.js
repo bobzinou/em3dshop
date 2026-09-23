@@ -1,11 +1,11 @@
 // ========================
-// 🛒 PANIER & PAIEMENT
+// PANIER & PAIEMENT
 // ========================
 
 let cart = [];
 let paypalButtonRendered = false;
 
-// ✅ AJOUTER AU PANIER
+// AJOUTER AU PANIER
 function addToCart(product) {
   const existing = cart.find(item => item.id === product.id);
   
@@ -19,17 +19,17 @@ function addToCart(product) {
   }
   
   updateCartUI();
-  console.log("✅ Produit ajouté :", product.name);
+  console.log("Produit ajouté :", product.name);
 }
 
-// ✅ RETIRER DU PANIER
+// RETIRER DU PANIER
 function removeFromCart(id) {
   cart = cart.filter(item => item.id !== id);
   updateCartUI();
-  console.log("✅ Produit supprimé");
+  console.log("Produit supprimé");
 }
 
-// ✅ MODIFIER QUANTITÉ
+// MODIFIER QUANTITÉ
 function updateQty(id, newQty) {
   const item = cart.find(item => item.id === id);
   if (item) {
@@ -38,7 +38,7 @@ function updateQty(id, newQty) {
   }
 }
 
-// ✅ AFFICHER LE PANIER
+// AFFICHER LE PANIER
 function updateCartUI() {
   const cartCount = document.getElementById("cart-count");
   const cartItems = document.getElementById("cart-items");
@@ -58,15 +58,15 @@ function updateCartUI() {
           <p class="cart-item-price">${item.price.toFixed(2)}€</p>
         </div>
         <div class="cart-item-qty">
-          <button class="qty-btn qty-minus" data-id="${item.id}">−</button>
+          <button class="qty-btn qty-minus" data-id="${item.id}">-</button>
           <span class="qty-display">${item.qty}</span>
           <button class="qty-btn qty-plus" data-id="${item.id}">+</button>
         </div>
-        <button class="cart-remove" data-id="${item.id}">✕</button>
+        <button class="cart-remove" data-id="${item.id}">X</button>
       </div>
     `).join("");
 
-    // ✅ EVENT LISTENERS pour les boutons MOINS
+    // EVENT LISTENERS pour les boutons MOINS
     document.querySelectorAll(".qty-minus").forEach(btn => {
       btn.addEventListener("click", (e) => {
         const id = e.target.dataset.id;
@@ -77,7 +77,7 @@ function updateCartUI() {
       });
     });
 
-    // ✅ EVENT LISTENERS pour les boutons PLUS
+    // EVENT LISTENERS pour les boutons PLUS
     document.querySelectorAll(".qty-plus").forEach(btn => {
       btn.addEventListener("click", (e) => {
         const id = e.target.dataset.id;
@@ -88,7 +88,7 @@ function updateCartUI() {
       });
     });
 
-    // ✅ EVENT LISTENERS pour les boutons SUPPRIMER
+    // EVENT LISTENERS pour les boutons SUPPRIMER
     document.querySelectorAll(".cart-remove").forEach(btn => {
       btn.addEventListener("click", (e) => {
         removeFromCart(e.target.dataset.id);
@@ -99,10 +99,11 @@ function updateCartUI() {
   updateTotals();
 }
 
-// ✅ CALCULER TOTAUX
+// CALCULER TOTAUX
 function updateTotals() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const shippingCost = 3.99;
+  const pickup = document.getElementById("pickup-checkbox").checked;
+  const shippingCost = pickup ? 0 : 3.99;
   const total = subtotal + shippingCost;
 
   document.getElementById("cart-subtotal").textContent = subtotal.toFixed(2) + "€";
@@ -110,25 +111,28 @@ function updateTotals() {
   document.getElementById("cart-total").textContent = total.toFixed(2) + "€";
 }
 
-// ✅ OUVRIR PANIER
+// OUVRIR PANIER
 function openCart() {
   document.getElementById("cart-panel").classList.remove("hidden");
   document.getElementById("overlay").classList.remove("hidden");
   updateCartUI();
 }
 
-// ✅ FERMER PANIER
+// FERMER PANIER
 function closeCart() {
   document.getElementById("cart-panel").classList.add("hidden");
   document.getElementById("overlay").classList.add("hidden");
 }
 
-// ✅ FERMER MODAL PAYPAL
+// FERMER MODAL PAYPAL
 function closePayPalModal() {
   document.getElementById("paypal-modal").classList.add("hidden");
+  document.getElementById("paypal-button-container").innerHTML = "";
+  document.getElementById("proceed-to-payment").classList.remove("hidden");
+  paypalButtonRendered = false;
 }
 
-// ✅ GESTION RETRAIT EN MAIN PROPRE
+// GESTION RETRAIT EN MAIN PROPRE
 function handlePickupChange() {
   const pickup = document.getElementById("pickup-checkbox").checked;
   const addressInput = document.getElementById("customer-address");
@@ -139,9 +143,11 @@ function handlePickupChange() {
   } else {
     addressInput.disabled = false;
   }
+  
+  updateTotals();
 }
 
-// ✅ PASSER AU PAIEMENT
+// PASSER AU PAIEMENT
 function handlePaymentClick() {
   const name = document.getElementById("customer-name").value.trim();
   const email = document.getElementById("customer-email").value.trim();
@@ -151,28 +157,28 @@ function handlePaymentClick() {
 
   console.log("Validation:", { name, email, pickup, address, cguChecked, cartLength: cart.length });
 
-  // ✅ VALIDATIONS
+  // VALIDATIONS
   if (!name || !email) {
-    alert("❌ Merci de renseigner votre nom et votre email.");
+    alert("Merci de renseigner votre nom et votre email.");
     return;
   }
 
   if (!cguChecked) {
-    alert("❌ Merci d'accepter les CGV et la Politique de Confidentialité.");
+    alert("Merci d'accepter les CGV et la Politique de Confidentialité.");
     return;
   }
 
   if (!pickup && !address) {
-    alert("❌ Merci de renseigner une adresse de livraison, ou cochez le retrait en main propre.");
+    alert("Merci de renseigner une adresse de livraison, ou cochez le retrait en main propre.");
     return;
   }
 
   if (cart.length === 0) {
-    alert("❌ Votre panier est vide.");
+    alert("Votre panier est vide.");
     return;
   }
 
-  console.log("✅ Validation OK ! Affichage de PayPal...");
+  console.log("Validation OK ! Affichage de PayPal...");
 
   // Cache le bouton, affiche la modal PayPal
   document.getElementById("proceed-to-payment").classList.add("hidden");
@@ -185,98 +191,83 @@ function handlePaymentClick() {
   }
 }
 
-// ✅ RENDER PAYPAL
+// RENDER PAYPAL
 function renderPayPalButton() {
+  if (!window.paypal) {
+    console.error("PayPal SDK pas chargé");
+    alert("Le module PayPal se charge... réessaie dans 2-3 secondes");
+    return;
+  }
+
   const name = document.getElementById("customer-name").value.trim();
   const email = document.getElementById("customer-email").value.trim();
   const pickup = document.getElementById("pickup-checkbox").checked;
   const address = document.getElementById("customer-address").value.trim();
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const shippingCost = 3.99;
+  const shippingCost = pickup ? 0 : 3.99;
   const total = subtotal + shippingCost;
 
   document.getElementById("paypal-button-container").innerHTML = "";
 
   paypal.Buttons({
     createOrder: function(data, actions) {
-      return actions.order.create({
-        purchase_units: [{
-          amount: {
-            currency_code: "EUR",
-            value: total.toFixed(2),
-            breakdown: {
-              item_total: {
-                currency_code: "EUR",
-                value: subtotal.toFixed(2)
-              },
-              shipping: {
-                currency_code: "EUR",
-                value: shippingCost.toFixed(2)
-              }
-            }
-          },
-          items: cart.map(item => ({
-            name: item.name,
-            unit_amount: {
-              currency_code: "EUR",
-              value: item.price.toFixed(2)
-            },
-            quantity: item.qty.toString()
-          }))
-        }]
-      });
+      return fetch("/api/paypal/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart,
+          total: total.toFixed(2),
+          customer: {
+            name: name,
+            email: email,
+            address: address,
+            pickup: pickup
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(order => order.id);
     },
 
     onApprove: function(data, actions) {
-      return actions.order.capture().then(function(orderData) {
-        console.log("✅ Paiement validé !");
-
-        // Envoyer la commande au serveur
-        fetch("/api/order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: orderData.id,
-            customer: { name, email, address, pickup },
-            items: cart,
-            total: total.toFixed(2)
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("✅ Merci " + name + " ! Votre commande a bien été validée.");
-            if (data.invoicePath) {
-              window.open(data.invoicePath, '_blank');
-            }
-          }
+      return fetch("/api/paypal/capture-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: data.orderID })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert("Paiement validé ! Facture envoyée par email.");
           cart = [];
           paypalButtonRendered = false;
           updateCartUI();
           closeCart();
           closePayPalModal();
-        })
-        .catch(err => {
-          console.error("Erreur serveur :", err);
-          alert("❌ Erreur lors de l'enregistrement de la commande.");
-        });
+        } else {
+          alert("Erreur lors du paiement. Réessaie.");
+        }
+      })
+      .catch(err => {
+        console.error("Erreur paiement :", err);
+        alert("Erreur paiement. Réessaie.");
       });
     },
 
     onError: function(err) {
-      alert("❌ Erreur de paiement. Réessayez.");
+      alert("Erreur de paiement. Réessaie.");
       console.error(err);
     }
   }).render("#paypal-button-container");
 }
 
 // ========================
-// 📱 EVENT LISTENERS
+// EVENT LISTENERS
 // ========================
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("🚀 Initialisation du panier...");
+  console.log("Initialisation du panier...");
 
   // Bouton panier
   const cartIcon = document.getElementById("cart-icon");

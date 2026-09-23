@@ -1,22 +1,30 @@
 async function loadPayPalSDK() {
   try {
-    const res = await fetch("/api/paypal-config");
-    const data = await res.json();
+    const response = await fetch("/api/paypal-config");
+    const config = await response.json();
 
-    if (!data.clientId) {
+    if (!config.clientId) {
       console.error("❌ Client ID PayPal introuvable. Vérifie ton .env");
-      return;
+      return false;
     }
 
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${data.clientId}&currency=EUR`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${config.clientId}&currency=EUR`;
+    script.async = true;
+
     script.onload = () => {
-      console.log("✅ SDK PayPal chargé avec le vrai Client ID");
-      document.dispatchEvent(new Event("paypal-sdk-ready"));
+      console.log("✅ PayPal SDK chargé");
+      window.paypalReady = true;
+      document.dispatchEvent(new Event("paypalLoaded"));
     };
-    document.body.appendChild(script);
+
+    script.onerror = () => {
+      console.error("❌ Erreur chargement PayPal SDK");
+    };
+
+    document.head.appendChild(script);
   } catch (err) {
-    console.error("Erreur chargement PayPal SDK :", err);
+    console.error("❌ Erreur config PayPal :", err);
   }
 }
 
