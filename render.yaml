@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: me3dshop
+    name: em3dshop
     env: node
     plan: free
     buildCommand: npm install

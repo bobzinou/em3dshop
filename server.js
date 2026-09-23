@@ -1,45 +1,28 @@
-const helmet = require('helmet');
-app.use(helmet());
-
 require('dotenv').config();
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
-const app = express();
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 const config = require("./config");
 const { generateInvoice } = require('./invoice-generator');
 const { sendInvoiceEmail } = require('./email-sender');
 
+const app = express();
 const PORT = 3000;
 const ordersFile = path.join(__dirname, "data/orders.json");
 
-const rateLimit = require('express-rate-limit');
+// ========================
+// 🛡️ SÉCURITÉ
+// ========================
+app.use(helmet());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requêtes max par IP
+  max: 100,
   message: "Trop de requêtes depuis cette IP, réessayez plus tard."
-  
-  const { body, validationResult } = require('express-validator');
-
-app.post("/api/paypal/capture-order",
-  [
-    body('customer.name').trim().escape().notEmpty(),
-    body('customer.email').isEmail().normalizeEmail(),
-    body('customer.address').trim().escape().optional()
-  ],
-  (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    // ... reste de ton code existant
-  }
-);
 });
-
-
-
 app.use('/api/', limiter);
 
 app.use(express.json());
@@ -50,17 +33,14 @@ app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 // 📋 ROUTES CONFIG
 // ========================
 
-// Renvoie le Client ID PayPal au front-end
 app.get('/api/paypal-config', (req, res) => {
   res.json({ clientId: process.env.PAYPAL_CLIENT_ID });
 });
 
-// Renvoie la config (thèmes, couleurs, livraison...)
 app.get("/api/config", (req, res) => {
   res.json(config);
 });
 
-// Renvoie tous les produits
 app.get("/api/products", (req, res) => {
   const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data/products.json"), "utf-8"));
   res.json(data);
@@ -70,7 +50,6 @@ app.get("/api/products", (req, res) => {
 // 💳 ROUTES PAYPAL
 // ========================
 
-// Crée une commande PayPal côté serveur
 app.post("/api/paypal/create-order", (req, res) => {
   const { items, total, pickup } = req.body;
 
@@ -115,91 +94,97 @@ app.post("/api/paypal/create-order", (req, res) => {
 });
 
 // Capture la commande PayPal après approbation du client
-app.post("/api/paypal/capture-order", async (req, res) => {
-  const { orderId, customer, items, total, pickup } = req.body;
-
-  try {
-    const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Basic ${Buffer.from(
-          process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
-        ).toString("base64")}`
-      }
-    });
-
-    const data = await captureResponse.json();
-
-    if (data.status === "COMPLETED") {
-      // ✅ Prépare les données de la commande
-      const order = {
-        orderId: data.id,
-        date: new Date().toISOString(),
-        customer: {
-          name: customer.name,
-          email: customer.email,
-          address: customer.address || "",
-          pickup: pickup || false
-        },
-        items: items,
-        total: parseFloat(total),
-        shipping: pickup ? 0 : 3.99,
-        paypalTransactionId: data.id
-      };
-
-      // 📝 Enregistre la commande en JSON
-      let orders = [];
-      if (fs.existsSync(ordersFile)) {
-        orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
-      }
-      orders.push(order);
-      fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
-      console.log("✅ Commande enregistrée :", order.orderId);
-
-      // 📄 Génère la facture PDF
-      try {
-        const invoicePath = path.join(__dirname, `invoices/facture_${orderId}.pdf`);
-        await generateInvoice(order, invoicePath);
-        console.log("✅ Facture générée :", invoicePath);
-
-        // 📧 Envoie l'email avec la facture
-        const emailSent = await sendInvoiceEmail(
-          customer.email,
-          customer.name,
-          invoicePath,
-          order
-        );
-
-        if (emailSent) {
-          console.log("✅ Email envoyé à :", customer.email);
-        } else {
-          console.warn("⚠️ Email non envoyé mais commande validée");
-        }
-      } catch (invoiceError) {
-        console.error("⚠️ Erreur lors de la génération/envoi de la facture :", invoiceError.message);
-        // Ne pas bloquer la commande si la facture échoue
-      }
-
-      res.json({ 
-        success: true, 
-        transactionId: data.id,
-        message: "Commande validée ! Facture envoyée par email."
-      });
-    } else {
-      res.status(400).json({ error: "Paiement non complété", status: data.status });
+app.post("/api/paypal/capture-order",
+  [
+    body('customer.name').trim().escape().notEmpty(),
+    body('customer.email').isEmail().normalizeEmail(),
+    body('customer.address').trim().escape().optional()
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  } catch (err) {
-    console.error("❌ Erreur lors de la capture PayPal :", err);
-    res.status(500).json({ error: err.message });
+
+    const { orderId, customer, items, total, pickup } = req.body;
+
+    try {
+      const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Basic ${Buffer.from(
+            process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
+          ).toString("base64")}`
+        }
+      });
+
+      const data = await captureResponse.json();
+
+      if (data.status === "COMPLETED") {
+        const order = {
+          orderId: data.id,
+          date: new Date().toISOString(),
+          customer: {
+            name: customer.name,
+            email: customer.email,
+            address: customer.address || "",
+            pickup: pickup || false
+          },
+          items: items,
+          total: parseFloat(total),
+          shipping: pickup ? 0 : 3.99,
+          paypalTransactionId: data.id
+        };
+
+        let orders = [];
+        if (fs.existsSync(ordersFile)) {
+          orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
+        }
+        orders.push(order);
+        fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
+        console.log("✅ Commande enregistrée :", order.orderId);
+
+        try {
+          const invoicePath = path.join(__dirname, `invoices/facture_${orderId}.pdf`);
+          await generateInvoice(order, invoicePath);
+          console.log("✅ Facture générée :", invoicePath);
+
+          const emailSent = await sendInvoiceEmail(
+            customer.email,
+            customer.name,
+            invoicePath,
+            order
+          );
+
+          if (emailSent) {
+            console.log("✅ Email envoyé à :", customer.email);
+          } else {
+            console.warn("⚠️ Email non envoyé mais commande validée");
+          }
+        } catch (invoiceError) {
+          console.error("⚠️ Erreur lors de la génération/envoi de la facture :", invoiceError.message);
+        }
+
+        res.json({
+          success: true,
+          transactionId: data.id,
+          message: "Commande validée ! Facture envoyée par email."
+        });
+      } else {
+        res.status(400).json({ error: "Paiement non complété", status: data.status });
+      }
+    } catch (err) {
+      console.error("❌ Erreur lors de la capture PayPal :", err);
+      res.status(500).json({ error: err.message });
+    }
   }
-});
+);
 
 // ========================
 // 📦 ROUTES COMMANDES
 // ========================
 
-// Enregistre une commande simulée (fallback si PayPal échoue)
 app.post("/api/order", async (req, res) => {
   try {
     const { orderId, customer, items, total, pickup } = req.body;
@@ -218,7 +203,6 @@ app.post("/api/order", async (req, res) => {
       shipping: pickup ? 0 : 3.99
     };
 
-    // Enregistre en JSON
     let orders = [];
     if (fs.existsSync(ordersFile)) {
       orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
@@ -227,7 +211,6 @@ app.post("/api/order", async (req, res) => {
     fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
     console.log("✅ Commande enregistrée :", order.orderId);
 
-    // Génère facture + envoie email
     try {
       const invoicePath = path.join(__dirname, `invoices/facture_${orderId}.pdf`);
       await generateInvoice(order, invoicePath);
@@ -244,7 +227,7 @@ app.post("/api/order", async (req, res) => {
       console.error("⚠️ Erreur facture :", invoiceError.message);
     }
 
-    res.json({ 
+    res.json({
       success: true,
       invoicePath: `/invoices/facture_${orderId}.pdf`,
       message: "Commande validée et facture envoyée !"
@@ -255,7 +238,6 @@ app.post("/api/order", async (req, res) => {
   }
 });
 
-// 📊 Route pour récupérer les commandes (admin)
 app.get("/api/orders", (req, res) => {
   try {
     if (fs.existsSync(ordersFile)) {
@@ -270,14 +252,16 @@ app.get("/api/orders", (req, res) => {
 });
 
 // ========================
-// 🚀 LANCEMENT
+// ⚠️ GESTION D'ERREURS (doit être en dernier, avant listen)
 // ========================
-
-app.listen(PORT, () => {
-  console.log(`\n🎃 EM3DSHOP lancé ! Ouvre ton navigateur sur : http://localhost:${PORT}\n`);
-  
-  app.use((err, req, res, next) => {
+app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Une erreur est survenue, réessayez plus tard." });
 });
+
+// ========================
+// 🚀 LANCEMENT
+// ========================
+app.listen(PORT, () => {
+  console.log(`\n🎃 EM3DSHOP lancé ! Ouvre ton navigateur sur : http://localhost:${PORT}\n`);
 });
