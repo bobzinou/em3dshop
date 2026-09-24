@@ -211,30 +211,30 @@ function renderPayPalButton() {
   document.getElementById("paypal-button-container").innerHTML = "";
 
   paypal.Buttons({
-createOrder: function(data, actions) {
-  return fetch("/api/paypal/create-order", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      items: cart,
-      total: total.toFixed(2),
-      customer: {
-        name: name,
-        email: email,
-        address: address,
-        pickup: pickup
-      }
-    })
-  })
-  .then(res => res.json())
-  .then(order => {
-    if (!order.orderId) {
-      console.error("Pas d'orderId reçu :", order);
-      throw new Error("Erreur création commande PayPal");
-    }
-    return order.orderId;
-  });
-},
+    createOrder: function(data, actions) {
+      return fetch("/api/paypal/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart,
+          total: total.toFixed(2),
+          customer: {
+            name: name,
+            email: email,
+            address: address,
+            pickup: pickup
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(order => {
+        if (!order.orderId) {
+          console.error("Pas d'orderId reçu :", order);
+          throw new Error("Erreur création commande PayPal");
+        }
+        return order.orderId;
+      });
+    },
 
     onApprove: function(data, actions) {
       return fetch("/api/paypal/capture-order", {
@@ -245,6 +245,31 @@ createOrder: function(data, actions) {
       .then(res => res.json())
       .then(result => {
         if (result.success) {
+          return fetch("/api/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: data.orderID,
+              items: cart,
+              customer: {
+                name: document.getElementById("customer-name").value.trim(),
+                email: document.getElementById("customer-email").value.trim(),
+                address: document.getElementById("customer-address").value.trim(),
+                pickup: document.getElementById("pickup-checkbox").checked
+              },
+              transactionId: result.transactionId,
+              total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
+                     (document.getElementById("pickup-checkbox").checked ? 0 : 3.99)
+            })
+          });
+        } else {
+          alert("Erreur lors du paiement. Réessaie.");
+          throw new Error("Paiement échoué");
+        }
+      })
+      .then(orderRes => orderRes.json())
+      .then(orderData => {
+        if (orderData.success) {
           alert("Paiement validé ! Facture envoyée par email.");
           cart = [];
           paypalButtonRendered = false;
@@ -252,7 +277,7 @@ createOrder: function(data, actions) {
           closeCart();
           closePayPalModal();
         } else {
-          alert("Erreur lors du paiement. Réessaie.");
+          alert("Erreur enregistrement commande.");
         }
       })
       .catch(err => {

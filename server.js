@@ -23,17 +23,15 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https:", "http:"],
-      frameSrc: ["'self'", "https:", "http:"],
-      connectSrc: ["'self'", "https:", "http:"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https:", "http:"],
-      imgSrc: ["'self'", "data:", "https:", "http:"],
-      fontSrc: ["'self'", "https:", "http:"]
-    }
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+	scriptSrc: ["'self'", "https://www.paypal.com", "https://js.paypal.com", "'unsafe-inline'"],
+    frameSrc: ["https://www.paypal.com", "https://www.sandbox.paypal.com"],
+    connectSrc: ["'self'", "https://api-m.sandbox.paypal.com", "https://api.paypal.com", "https://www.sandbox.paypal.com", "https://www.paypalobjects.com"],
+    imgSrc: ["'self'", "data:", "https://www.paypalobjects.com", "https://www.sandbox.paypal.com"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://www.paypalobjects.com"],
+    fontSrc: ["'self'", "https://www.paypalobjects.com"]
   }
 }));
 
@@ -164,7 +162,7 @@ app.post("/api/order",
     body('customer.name').trim().escape().notEmpty(),
     body('customer.email').isEmail().normalizeEmail(),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -174,6 +172,8 @@ app.post("/api/order",
       const order = req.body;
       order.date = new Date().toISOString();
 
+      console.log('📝 Commande reçue:', order.orderId);
+
       let orders = [];
       if (fs.existsSync(ordersFile)) {
         orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
@@ -181,12 +181,22 @@ app.post("/api/order",
       orders.push(order);
       fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
 
+      console.log('💾 Commande sauvegardée');
+
       // Génère la facture PDF
-      const invoicePath = generateInvoice(order);
+      const invoicePath = path.join(__dirname, 'invoices', `${order.orderId || 'invoice'}_${Date.now()}.pdf`);
+      
+      console.log('🖨️ Génération facture:', invoicePath);
+      await generateInvoice(order, invoicePath);
+      console.log('✅ Facture générée');
 
       // Envoie par email
       if (order.customer.email) {
-        sendInvoiceEmail(order.customer.email, order.customer.name, invoicePath);
+        console.log('📧 Envoi email à:', order.customer.email);
+        const emailResult = await sendInvoiceEmail(order.customer.email, order.customer.name, invoicePath, order);
+        console.log('📧 Résultat email:', emailResult);
+      } else {
+        console.log('⚠️ Pas d\'email client');
       }
 
       console.log("✅ Commande enregistrée :", order.orderId || order.transactionId);
