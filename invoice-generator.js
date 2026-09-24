@@ -17,9 +17,9 @@ function generateInvoice(order, outputPath) {
       doc.pipe(stream);
 
       // En-tête
-      doc.fontSize(24).font('Helvetica-Bold').text('ME3DSHOP', 50, 40);
+      doc.fontSize(24).font('Helvetica-Bold').text('EM3DSHOP', 50, 40);
       doc.fontSize(11).font('Helvetica').text('Impressions 3D Artisanales', 50, 70);
-      doc.text('📍 Le Plessis-Bouchard, France', 50, 85);
+      doc.text('Le Plessis-Bouchard, France', 50, 85);
 
       // Titre FACTURE
       doc.fontSize(18).font('Helvetica-Bold').text('FACTURE', 400, 50);
@@ -102,7 +102,7 @@ function generateInvoice(order, outputPath) {
       doc.end();
 
       stream.on('finish', () => {
-        console.log('✅ PDF créé:', outputPath);
+        console.log('PDF créé:', outputPath);
         resolve(outputPath);
       });
 
