@@ -211,24 +211,30 @@ function renderPayPalButton() {
   document.getElementById("paypal-button-container").innerHTML = "";
 
   paypal.Buttons({
-    createOrder: function(data, actions) {
-      return fetch("/api/paypal/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cart,
-          total: total.toFixed(2),
-          customer: {
-            name: name,
-            email: email,
-            address: address,
-            pickup: pickup
-          }
-        })
-      })
-      .then(res => res.json())
-      .then(order => order.id);
-    },
+createOrder: function(data, actions) {
+  return fetch("/api/paypal/create-order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      items: cart,
+      total: total.toFixed(2),
+      customer: {
+        name: name,
+        email: email,
+        address: address,
+        pickup: pickup
+      }
+    })
+  })
+  .then(res => res.json())
+  .then(order => {
+    if (!order.orderId) {
+      console.error("Pas d'orderId reçu :", order);
+      throw new Error("Erreur création commande PayPal");
+    }
+    return order.orderId;
+  });
+},
 
     onApprove: function(data, actions) {
       return fetch("/api/paypal/capture-order", {
