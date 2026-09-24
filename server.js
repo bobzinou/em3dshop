@@ -1,226 +1,165 @@
-require('dotenv').config();
+// server.js
 const express = require("express");
+const axios = require("axios");
+const dotenv = require("dotenv");
 const path = require("path");
-const fs = require("fs");
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const { body, validationResult } = require('express-validator');
-const config = require("./config");
-const { generateInvoice } = require('./invoice-generator');
-const { sendInvoiceEmail } = require('./email-sender');
+const rateLimit = require("express-rate-limit");
+
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
-const ordersFile = path.join(__dirname, "data/orders.json");
 
-// ========================
-// 🔒 SÉCURITÉ
-// ========================
+// ✅ TRUST PROXY POUR RENDER
+app.set('trust proxy', 1);
 
-app.use((req, res, next) => {
-  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  next();
-});
-
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: ["'self'"],
-	scriptSrc: ["'self'", "https://www.paypal.com", "https://js.paypal.com", "'unsafe-inline'"],
-    frameSrc: ["https://www.paypal.com", "https://www.sandbox.paypal.com"],
-    connectSrc: ["'self'", "https://api-m.sandbox.paypal.com", "https://api.paypal.com", "https://www.sandbox.paypal.com", "https://www.paypalobjects.com"],
-    imgSrc: ["'self'", "data:", "https://www.paypalobjects.com", "https://www.sandbox.paypal.com"],
-    styleSrc: ["'self'", "'unsafe-inline'", "https://www.paypalobjects.com"],
-    fontSrc: ["'self'", "https://www.paypalobjects.com"]
-  }
-}));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
-});
-app.use('/api/', limiter);
-
+// Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 
-// ========================
-// 🔧 CONFIG & PRODUITS
-// ========================
-
-app.get('/api/paypal-config', (req, res) => {
-  res.json({ clientId: process.env.PAYPAL_CLIENT_ID });
-});
-
-app.get("/api/config", (req, res) => {
-  res.json(config);
-});
-
-app.get("/api/products", (req, res) => {
-  try {
-    const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data/products.json"), "utf-8"));
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: "Erreur chargement produits" });
+// ✅ RATE LIMIT SANS PROBLÈME IPv6
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    return req.ip === '::1' || req.ip === '127.0.0.1';
   }
 });
 
-// ========================
-// 💳 PAYPAL - CREATE ORDER
-// ========================
+app.use(limiter);
 
+// ✅ PAYPAL CONFIG - PRODUCTION
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+const PAYPAL_SECRET = process.env.PAYPAL_SECRET;
+const PAYPAL_API = "https://api-m.paypal.com";
+
+console.log("🔐 PayPal Production Mode");
+console.log(`✅ Client ID: ${PAYPAL_CLIENT_ID?.substring(0, 20)}...`);
+
+// ✅ CRÉER UNE COMMANDE
 app.post("/api/paypal/create-order", async (req, res) => {
   try {
-    const { items, total, customer } = req.body;
+    const { items, total } = req.body;
 
-    if (!items || !total || !customer) {
-      return res.status(400).json({ error: "Données manquantes" });
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: "Panier vide" });
     }
 
-    const response = await fetch(
-  "https://api-m.paypal.com/v2/checkout/orders"
+    const auth = Buffer.from(
+      `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`
+    ).toString("base64");
+
+    const response = await axios.post(
+      `${PAYPAL_API}/v2/checkout/orders`,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Basic ${Buffer.from(
-            process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
-          ).toString("base64")}`
-        },
-        body: JSON.stringify({
-          intent: "CAPTURE",
-          purchase_units: [{
+        intent: "CAPTURE",
+        purchase_units: [
+          {
             amount: {
-              value: parseFloat(total).toFixed(2),
-              currency_code: "EUR"
-            }
-          }]
-        })
+              currency_code: "EUR",
+              value: total.toFixed(2),
+              breakdown: {
+                item_total: {
+                  currency_code: "EUR",
+                  value: total.toFixed(2),
+                },
+              },
+            },
+            items: items.map((item) => ({
+              name: item.name,
+              unit_amount: {
+                currency_code: "EUR",
+                value: item.price.toFixed(2),
+              },
+              quantity: item.quantity,
+            })),
+          },
+        ],
+        application_context: {
+          return_url: `${process.env.RETURN_URL || "http://localhost:5000"}/success`,
+          cancel_url: `${process.env.RETURN_URL || "http://localhost:5000"}/cancel`,
+          brand_name: "ME3D Shop",
+          locale: "fr-FR",
+          user_action: "PAY_NOW",
+        },
+      },
+      {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
       }
     );
 
-    const order = await response.json();
-
-    if (!order.id) {
-      return res.status(400).json({ error: "Erreur création commande PayPal" });
-    }
-
-    res.json({ orderId: order.id });
-  } catch (err) {
-    console.error("❌ Erreur create-order :", err);
-    res.status(500).json({ error: err.message });
+    console.log("✅ Commande créée:", response.data.id);
+    res.json({
+      id: response.data.id,
+      status: response.data.status,
+    });
+  } catch (error) {
+    console.error("❌ Erreur création:", error.response?.data || error.message);
+    res.status(500).json({
+      error: error.response?.data?.message || "Erreur serveur",
+    });
   }
 });
 
-// ========================
-// 💳 PAYPAL - CAPTURE ORDER
-// ========================
-
+// ✅ CAPTURER LA COMMANDE
 app.post("/api/paypal/capture-order", async (req, res) => {
   try {
-    const { orderId } = req.body;
+    const { orderID } = req.body;
 
-    if (!orderId) {
-      return res.status(400).json({ error: "OrderID manquant" });
+    if (!orderID) {
+      return res.status(400).json({ error: "Order ID manquant" });
     }
 
-    const response = await fetch(
-      `https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`,
+    const auth = Buffer.from(
+      `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`
+    ).toString("base64");
+
+    const response = await axios.post(
+      `${PAYPAL_API}/v2/checkout/orders/${orderID}/capture`,
+      {},
       {
-        method: "POST",
         headers: {
+          Authorization: `Basic ${auth}`,
           "Content-Type": "application/json",
-          Authorization: `Basic ${Buffer.from(
-            process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_SECRET
-          ).toString("base64")}`
-        }
+        },
       }
     );
 
-    const orderData = await response.json();
-
-    if (orderData.status === "COMPLETED") {
-      console.log("✅ Commande PayPal validée :", orderData.id);
-      res.json({ success: true, transactionId: orderData.id });
-    } else {
-      res.status(400).json({ error: "Paiement non complété", status: orderData.status });
-    }
-  } catch (err) {
-    console.error("❌ Erreur capture-order :", err);
-    res.status(500).json({ error: err.message });
+    console.log("✅ Paiement capturé:", response.data.status);
+    res.json({
+      status: response.data.status,
+      orderID: response.data.id,
+    });
+  } catch (error) {
+    console.error("❌ Erreur capture:", error.response?.data || error.message);
+    res.status(500).json({
+      error: error.response?.data?.message || "Erreur serveur",
+    });
   }
 });
 
-// ========================
-// 📦 ENREGISTREMENT COMMANDE
-// ========================
-
-app.post("/api/order", 
-  [
-    body('customer.name').trim().escape().notEmpty(),
-    body('customer.email').isEmail().normalizeEmail(),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    try {
-      const order = req.body;
-      order.date = new Date().toISOString();
-
-      console.log('📝 Commande reçue:', order.orderId);
-
-      let orders = [];
-      if (fs.existsSync(ordersFile)) {
-        orders = JSON.parse(fs.readFileSync(ordersFile, "utf-8"));
-      }
-      orders.push(order);
-      fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2));
-
-      console.log('💾 Commande sauvegardée');
-
-      // Génère la facture PDF
-      const invoicePath = path.join(__dirname, 'invoices', `${order.orderId || 'invoice'}_${Date.now()}.pdf`);
-      
-      console.log('🖨️ Génération facture:', invoicePath);
-      await generateInvoice(order, invoicePath);
-      console.log('✅ Facture générée');
-
-      // Envoie par email
-      if (order.customer.email) {
-        console.log('📧 Envoi email à:', order.customer.email);
-        const emailResult = await sendInvoiceEmail(order.customer.email, order.customer.name, invoicePath, order);
-        console.log('📧 Résultat email:', emailResult);
-      } else {
-        console.log('⚠️ Pas d\'email client');
-      }
-
-      console.log("✅ Commande enregistrée :", order.orderId || order.transactionId);
-      res.json({ success: true, invoicePath });
-    } catch (err) {
-      console.error("❌ Erreur enregistrement commande :", err);
-      res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-// ========================
-// 🛡️ ERROR HANDLER
-// ========================
-
-app.use((err, req, res, next) => {
-  console.error("❌ Erreur serveur :", err.stack);
-  res.status(500).json({ error: "Une erreur est survenue, réessayez plus tard." });
+// Routes statiques
+app.get("/success", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/success.html"));
 });
 
-// ========================
-// 🚀 DÉMARRAGE
-// ========================
+app.get("/cancel", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/cancel.html"));
+});
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/index.html"));
+});
+
+// Démarrage
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`\n🎃 ME3DSHOP lancé ! Ouvre : http://localhost:${PORT}\n`);
+  console.log(`🚀 Serveur lancé sur le port ${PORT}`);
+  console.log(`📍 http://localhost:${PORT}`);
 });
+
+module.exports = app;
