@@ -237,58 +237,72 @@ function renderPayPalButton() {
     },
 
     onApprove: function(data, actions) {
+      console.log("✅ Paiement approuvé par l'utilisateur");
+
       return fetch("/api/paypal/capture-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: data.orderID })
       })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(result => {
-        if (result.success) {
-          return fetch("/api/order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: data.orderID,
-              items: cart,
-              customer: {
-                name: document.getElementById("customer-name").value.trim(),
-                email: document.getElementById("customer-email").value.trim(),
-                address: document.getElementById("customer-address").value.trim(),
-                pickup: document.getElementById("pickup-checkbox").checked
-              },
-              transactionId: result.transactionId,
-              total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
-                     (document.getElementById("pickup-checkbox").checked ? 0 : 3.99)
-            })
-          });
-        } else {
-          alert("Erreur lors du paiement. Réessaie.");
-          throw new Error("Paiement échoué");
+        console.log("Capture result:", result);
+        if (!result.success) {
+          throw new Error("Capture échouée : " + result.error);
         }
+
+        return fetch("/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: data.orderID,
+            items: cart,
+            customer: {
+              name: document.getElementById("customer-name").value.trim(),
+              email: document.getElementById("customer-email").value.trim(),
+              address: document.getElementById("customer-address").value.trim(),
+              pickup: document.getElementById("pickup-checkbox").checked
+            },
+            transactionId: result.transactionId,
+            total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
+                   (document.getElementById("pickup-checkbox").checked ? 0 : 3.99)
+          })
+        });
       })
-      .then(orderRes => orderRes.json())
+      .then(orderRes => {
+        if (!orderRes.ok) throw new Error(`HTTP ${orderRes.status}`);
+        return orderRes.json();
+      })
       .then(orderData => {
-        if (orderData.success) {
-          alert("Paiement validé ! Facture envoyée par email.");
-          cart = [];
-          paypalButtonRendered = false;
-          updateCartUI();
-          closeCart();
-          closePayPalModal();
-        } else {
-          alert("Erreur enregistrement commande.");
-        }
-      })
+  console.log("Order saved:", orderData);
+  
+  if (orderData.success) {
+    // REDIRIGE vers la page de succès
+    window.location.href = "/success.html?orderId=" + orderData.orderId;
+    return;
+  } else {
+    throw new Error(orderData.error || "Erreur enregistrement commande");
+  }
+})
       .catch(err => {
         console.error("Erreur paiement :", err);
-        alert("Erreur paiement. Réessaie.");
+        alert("Erreur : " + err.message);
+        
+        // Force fermeture même en cas d'erreur
+        document.getElementById("paypal-modal").classList.add("hidden");
+        document.getElementById("paypal-button-container").innerHTML = "";
+        document.getElementById("proceed-to-payment").classList.remove("hidden");
+        paypalButtonRendered = false;
       });
     },
 
     onError: function(err) {
+      console.error("PayPal Error:", err);
       alert("Erreur de paiement. Réessaie.");
-      console.error(err);
+      closePayPalModal();
     }
   }).render("#paypal-button-container");
 }

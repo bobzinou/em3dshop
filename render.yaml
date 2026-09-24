@@ -16,5 +16,5 @@ services:
         value: live
       - key: EMAIL_USER
         scope: build,runtime
-      - key: EMAIL_PASS
+      - key: EMAIL_PASSWORD
         scope: build,runtime
