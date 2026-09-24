@@ -80,7 +80,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
     }
 
     const response = await fetch(
-      "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+  "https://api-m.paypal.com/v2/checkout/orders"
       {
         method: "POST",
         headers: {
