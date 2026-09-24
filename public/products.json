@@ -28,7 +28,7 @@
       "id": "citrouille-tricot",
       "name": "Citrouille effet tricoté",
       "category": "Décorations",
-      "price": 0.5,
+      "price": 0.05,
       "description": "Citrouille imprimée en 3D avec un effet tricoté très réaliste.",
       "images": ["citrouille-tricote.png", "citrouille-tricote-dos.png"]
     },

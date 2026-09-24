@@ -1,12 +1,14 @@
 // server.js
+const dotenv = require("dotenv");
+dotenv.config(); // ✅ TOUJOURS EN PREMIER, avant tout le reste
+
+const { generateInvoice } = require("./invoice-generator");
+const { sendInvoiceEmail } = require("./email-sender");
 const express = require("express");
 const axios = require("axios");
-const dotenv = require("dotenv");
 const path = require("path");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
-
-dotenv.config();
 
 const app = express();
 
@@ -84,11 +86,16 @@ app.get("/api/config", (req, res) => {
   }
 });
 
-// ✅ ENREGISTRER UNE COMMANDE (optionnel, log simple)
-app.post("/api/order", (req, res) => {
+app.post("/api/order", async (req, res) => {
+	 console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
   try {
     const order = req.body;
     order.date = new Date().toISOString();
+
+    // ✅ Génère un orderId s'il n'existe pas
+    if (!order.orderId) {
+      order.orderId = "ME3D-" + Date.now();
+    }
 
     const ordersPath = path.join(__dirname, "data/orders.json");
     let orders = [];
@@ -100,8 +107,39 @@ app.post("/api/order", (req, res) => {
     orders.push(order);
     fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
 
-    console.log("🧾 Nouvelle commande enregistrée");
-    res.json({ success: true });
+    console.log("🧾 Nouvelle commande enregistrée:", order.orderId);
+
+    // ✅ Génère la facture PDF
+    const invoicePath = path.join(invoicesDir, `facture_${order.orderId}.pdf`);
+    
+    try {
+      await generateInvoice(order, invoicePath);
+      console.log("✅ Facture PDF générée:", invoicePath);
+
+      // ✅ Envoie l'email si on a une adresse client
+      if (order.customer?.email) {
+        console.log("📧 Envoi email à:", order.customer.email);
+        const emailSent = await sendInvoiceEmail(
+          order.customer.email,
+          order.customer.name,
+          invoicePath,
+          order
+        );
+
+        if (emailSent) {
+          console.log("✅ Email envoyé avec succès");
+        } else {
+          console.warn("⚠️ Échec envoi email (voir logs ci-dessus)");
+        }
+      } else {
+        console.warn("⚠️ Pas d'email client, envoi ignoré");
+      }
+    } catch (invoiceError) {
+      console.error("❌ Erreur génération facture/email:", invoiceError.message);
+      // On continue même si la facture échoue : la commande est déjà enregistrée
+    }
+
+    res.json({ success: true, orderId: order.orderId });
   } catch (err) {
     console.error("❌ Erreur enregistrement commande:", err.message);
     res.status(500).json({ error: "Impossible d'enregistrer la commande" });
