@@ -27,7 +27,7 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// ✅ RATE LIMIT SANS PROBLÈME IPv6
+//  RATE LIMIT SANS PROBLÈME IPv6
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -40,4 +40,3 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// ... rest du code
