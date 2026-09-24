@@ -822,3 +822,57 @@ main {
     height: 16px;
   }
 }
+
+:root {
+  --primary: #ff7518;
+  --bg-secondary: #1a1a1a;
+  --bg: #0d0d0d;
+  --text: #f5f5f5;
+  --border: #ff7518;
+  --card-bg: #1f1f1f;
+}
+
+body[data-theme="halloween"] {
+  --primary: #ff6600;
+  --bg-secondary: #000000;
+  --bg: #1a0d26;
+  --text: #ffcc66;
+  --border: #ff6600;
+  --card-bg: #2a1a3a;
+}
+
+body[data-theme="noel"] {
+  --primary: #c0392b;
+  --bg-secondary: #ffffff;
+  --bg: #0d3320;
+  --text: #ffffff;
+  --border: #c0392b;
+  --card-bg: #145a32;
+}
+
+body[data-theme="figurines"] {
+  --primary: #3498db;
+  --bg-secondary: #1a1a1a;
+  --bg: #1a1a1a;
+  --text: #f5f5f5;
+  --border: #3498db;
+  --card-bg: #22262e;
+}
+
+body[data-theme="hueforge"] {
+  --primary: #9b59b6;
+  --bg-secondary: #1a1a1a;
+  --bg: #1a1a1a;
+  --text: #f5f5f5;
+  --border: #9b59b6;
+  --card-bg: #2a1f33;
+}
+
+body[data-theme="paques"] {
+  --primary: #f7c948;
+  --bg-secondary: #a8e6a3;
+  --bg: #fef9e7;
+  --text: #333333;
+  --border: #f7c948;
+  --card-bg: #ffffff;
+}

@@ -30,21 +30,12 @@ const THEMES = {
 let currentTheme = "halloween";
 
 function applyTheme(themeKey) {
-  const theme = THEMES[themeKey];
-  if (!theme) return;
-
-  // Retire toutes les classes de thème précédentes
-  Object.values(THEMES).forEach(t => {
-    document.body.classList.remove(t.class);
-  });
-
-  // Applique la nouvelle classe de thème
-  document.body.classList.add(theme.class);
   currentTheme = themeKey;
-
-  // Met à jour les boutons actifs dans la nav
-  document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === themeKey);
+  document.body.setAttribute("data-theme", themeKey);
+  
+  // Mise à jour visuelle de la nav (bouton actif)
+  document.querySelectorAll(".theme-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.theme === themeKey);
   });
 }
 

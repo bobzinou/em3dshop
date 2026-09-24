@@ -1,10 +1,13 @@
 let allProducts = {};
 let currentCategory = "Toutes";
 
+
+
 const CATEGORIES = ["Toutes", "Décorations", "Figurines", "Divers"];
 
 async function loadProducts() {
   const res = await fetch("/api/products");
+  if (!res.ok) throw new Error(`Impossible de charger les produits (${res.status})`);
   allProducts = await res.json();
 }
 
@@ -28,6 +31,7 @@ function renderCategoryBar() {
 
 function loadProductsForTheme() {
   const grid = document.getElementById("products-grid");
+  if (!grid) return;
   grid.innerHTML = "";
 
   const products = allProducts[currentTheme] || [];
@@ -49,20 +53,29 @@ function loadProductsForTheme() {
       <img src="images/${currentTheme}/${product.images[0]}" alt="${product.name}">
       <div class="product-info">
         <h3>${product.name}</h3>
-        <div class="product-price">${product.price.toFixed(2)}€</div>
+        <div class="product-price">${Number(product.price).toFixed(2)}€</div>
       </div>
     `;
-    card.addEventListener("click", () => openLightbox(product));
+    if (typeof openLightbox === "function") {
+      card.addEventListener("click", () => openLightbox(product));
+    }
     grid.appendChild(card);
   });
 }
 
 async function init() {
-  renderThemeNav();
-  applyTheme(currentTheme);
+  // Ces fonctions appartiennent à des scripts optionnels du projet complet.
+  if (typeof renderThemeNav === "function") renderThemeNav();
+  if (typeof applyTheme === "function") applyTheme(currentTheme);
   renderCategoryBar();
-  await loadProducts();
-  loadProductsForTheme();
+  try {
+    await loadProducts();
+    loadProductsForTheme();
+  } catch (error) {
+    console.error("Erreur de chargement des produits :", error);
+    const grid = document.getElementById("products-grid");
+    if (grid) grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; padding:40px;">Impossible de charger les produits.</p>`;
+  }
 }
 
 init();

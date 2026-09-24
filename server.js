@@ -3,6 +3,7 @@ const express = require("express");
 const axios = require("axios");
 const dotenv = require("dotenv");
 const path = require("path");
+const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 
 dotenv.config();
@@ -37,13 +38,75 @@ const PAYPAL_API = "https://api-m.paypal.com";
 console.log("🔐 PayPal Production Mode");
 console.log(`✅ Client ID: ${PAYPAL_CLIENT_ID?.substring(0, 20)}...`);
 
-// ✅ CRÉER UNE COMMANDE
+// ✅ CONFIG PAYPAL POUR LE FRONT
+app.get("/api/paypal-config", (req, res) => {
+  res.json({ clientId: PAYPAL_CLIENT_ID });
+});
+
+// ✅ LISTE DES PRODUITS
+app.get("/api/products", (req, res) => {
+  try {
+    const data = fs.readFileSync(path.join(__dirname, "public/products.json"), "utf-8");
+    res.json(JSON.parse(data));
+  } catch (err) {
+    console.error("❌ Erreur lecture products.json:", err.message);
+    res.status(500).json({ error: "Impossible de charger les produits" });
+  }
+});
+
+// ✅ CONFIG GÉNÉRALE (thèmes, couleurs, livraison...)
+app.get("/api/config", (req, res) => {
+  try {
+    const configPath = path.join(__dirname, "public/config.json");
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, "utf-8");
+      res.json(JSON.parse(data));
+    } else {
+      res.json({});
+    }
+  } catch (err) {
+    console.error("❌ Erreur lecture config.json:", err.message);
+    res.status(500).json({ error: "Impossible de charger la config" });
+  }
+});
+
+// ✅ ENREGISTRER UNE COMMANDE (optionnel, log simple)
+app.post("/api/order", (req, res) => {
+  try {
+    const order = req.body;
+    order.date = new Date().toISOString();
+
+    const ordersPath = path.join(__dirname, "data/orders.json");
+    let orders = [];
+
+    if (fs.existsSync(ordersPath)) {
+      orders = JSON.parse(fs.readFileSync(ordersPath, "utf-8"));
+    }
+
+    orders.push(order);
+    fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
+
+    console.log("🧾 Nouvelle commande enregistrée");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Erreur enregistrement commande:", err.message);
+    res.status(500).json({ error: "Impossible d'enregistrer la commande" });
+  }
+});
+
+// ✅ CRÉER UNE COMMANDE PAYPAL
 app.post("/api/paypal/create-order", async (req, res) => {
   try {
     const { items, total } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: "Panier vide" });
+    }
+
+    const numericTotal = Number(total);
+
+    if (isNaN(numericTotal) || numericTotal <= 0) {
+      return res.status(400).json({ error: "Total invalide" });
     }
 
     const auth = Buffer.from(
@@ -58,11 +121,11 @@ app.post("/api/paypal/create-order", async (req, res) => {
           {
             amount: {
               currency_code: "EUR",
-              value: total.toFixed(2),
+              value: numericTotal.toFixed(2),
               breakdown: {
                 item_total: {
                   currency_code: "EUR",
-                  value: total.toFixed(2),
+                  value: numericTotal.toFixed(2),
                 },
               },
             },
@@ -70,15 +133,15 @@ app.post("/api/paypal/create-order", async (req, res) => {
               name: item.name,
               unit_amount: {
                 currency_code: "EUR",
-                value: item.price.toFixed(2),
+                value: Number(item.price).toFixed(2),
               },
-              quantity: item.quantity,
+              quantity: String(item.qty), // ✅ FIX : "qty" au lieu de "quantity" + String()
             })),
           },
         ],
         application_context: {
-          return_url: `${process.env.RETURN_URL || "http://localhost:5000"}/success`,
-          cancel_url: `${process.env.RETURN_URL || "http://localhost:5000"}/cancel`,
+          return_url: `${process.env.RETURN_URL || "http://localhost:3000"}/success`,
+          cancel_url: `${process.env.RETURN_URL || "http://localhost:3000"}/cancel`,
           brand_name: "ME3D Shop",
           locale: "fr-FR",
           user_action: "PAY_NOW",
@@ -94,23 +157,24 @@ app.post("/api/paypal/create-order", async (req, res) => {
 
     console.log("✅ Commande créée:", response.data.id);
     res.json({
-      id: response.data.id,
+      orderId: response.data.id, // ✅ FIX : "orderId" au lieu de "id"
       status: response.data.status,
     });
   } catch (error) {
-    console.error("❌ Erreur création:", error.response?.data || error.message);
+    console.error("❌ Erreur création:", JSON.stringify(error.response?.data, null, 2) || error.message);
     res.status(500).json({
       error: error.response?.data?.message || "Erreur serveur",
+      details: error.response?.data,
     });
   }
 });
 
-// ✅ CAPTURER LA COMMANDE
+// ✅ CAPTURER LA COMMANDE PAYPAL
 app.post("/api/paypal/capture-order", async (req, res) => {
   try {
-    const { orderID } = req.body;
+    const { orderId } = req.body; // ✅ le front envoie "orderId" (minuscule d)
 
-    if (!orderID) {
+    if (!orderId) {
       return res.status(400).json({ error: "Order ID manquant" });
     }
 
@@ -119,7 +183,7 @@ app.post("/api/paypal/capture-order", async (req, res) => {
     ).toString("base64");
 
     const response = await axios.post(
-      `${PAYPAL_API}/v2/checkout/orders/${orderID}/capture`,
+      `${PAYPAL_API}/v2/checkout/orders/${orderId}/capture`,
       {},
       {
         headers: {
@@ -129,14 +193,21 @@ app.post("/api/paypal/capture-order", async (req, res) => {
       }
     );
 
-    console.log("✅ Paiement capturé:", response.data.status);
+    const status = response.data.status;
+    const transactionId = response.data.purchase_units?.[0]?.payments?.captures?.[0]?.id 
+                           || response.data.id;
+
+    console.log("✅ Paiement capturé:", status, "| Transaction:", transactionId);
+
     res.json({
-      status: response.data.status,
-      orderID: response.data.id,
+      success: status === "COMPLETED", // ✅ ton front vérifie "result.success"
+      status: status,
+      transactionId: transactionId,     // ✅ ton front utilise "result.transactionId"
     });
   } catch (error) {
     console.error("❌ Erreur capture:", error.response?.data || error.message);
     res.status(500).json({
+      success: false,
       error: error.response?.data?.message || "Erreur serveur",
     });
   }
@@ -156,7 +227,7 @@ app.get("/", (req, res) => {
 });
 
 // Démarrage
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Serveur lancé sur le port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
