@@ -1,6 +1,6 @@
 // server.js
 const dotenv = require("dotenv");
-dotenv.config(); // ✅ TOUJOURS EN PREMIER, avant tout le reste
+dotenv.config(); //  TOUJOURS EN PREMIER, avant tout le reste
 
 const { generateInvoice } = require("./invoice-generator");
 const { sendInvoiceEmail } = require("./email-sender");
@@ -9,10 +9,53 @@ const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
 
 const app = express();
 
-// ✅ CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
+//  HELMET - HEADERS DE SÉCURITÉ (en premier, avant tout le reste)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://www.paypal.com",
+          "https://www.sandbox.paypal.com",
+          "https://*.paypal.com",
+          "https://js.paypal.com",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: [
+          "'self'",
+          "https://api-m.paypal.com",
+          "https://api-m.sandbox.paypal.com",
+          "https://*.paypal.com",
+        ],
+        frameSrc: [
+          "'self'",
+          "https://www.paypal.com",
+          "https://www.sandbox.paypal.com",
+          "https://*.paypal.com",
+        ],
+      },
+    },
+    crossOriginEmbedderPolicy: false, //  requis pour PayPal
+  })
+);
+
+app.use(
+  helmet.hsts({
+    maxAge: 31536000, // 1 an
+    includeSubDomains: true,
+    preload: true,
+  })
+);
+
+//  CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
 const dataDir = path.join(__dirname, "data");
 const invoicesDir = path.join(__dirname, "invoices");
 
@@ -22,7 +65,7 @@ if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
 const ordersFile = path.join(dataDir, "orders.json");
 if (!fs.existsSync(ordersFile)) fs.writeFileSync(ordersFile, JSON.stringify([]));
 
-// ✅ TRUST PROXY POUR RENDER
+//  TRUST PROXY POUR RENDER
 app.set('trust proxy', 1);
 
 // Middleware
@@ -42,35 +85,31 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-
-
-app.use(limiter);
-
-// ✅ PAYPAL CONFIG - PRODUCTION
+//  PAYPAL CONFIG - PRODUCTION
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const PAYPAL_SECRET = process.env.PAYPAL_SECRET;
 const PAYPAL_API = "https://api-m.paypal.com";
 
-console.log("🔐 PayPal Production Mode");
-console.log(`✅ Client ID: ${PAYPAL_CLIENT_ID?.substring(0, 20)}...`);
+console.log("PayPal Production Mode");
+console.log(` Client ID: ${PAYPAL_CLIENT_ID?.substring(0, 20)}...`);
 
-// ✅ CONFIG PAYPAL POUR LE FRONT
+//  CONFIG PAYPAL POUR LE FRONT
 app.get("/api/paypal-config", (req, res) => {
   res.json({ clientId: PAYPAL_CLIENT_ID });
 });
 
-// ✅ LISTE DES PRODUITS
+//  LISTE DES PRODUITS
 app.get("/api/products", (req, res) => {
   try {
     const data = fs.readFileSync(path.join(__dirname, "public/products.json"), "utf-8");
     res.json(JSON.parse(data));
   } catch (err) {
-    console.error("❌ Erreur lecture products.json:", err.message);
+    console.error(" Erreur lecture products.json:", err.message);
     res.status(500).json({ error: "Impossible de charger les produits" });
   }
 });
 
-// ✅ CONFIG GÉNÉRALE (thèmes, couleurs, livraison...)
+//  CONFIG GÉNÉRALE (thèmes, couleurs, livraison...)
 app.get("/api/config", (req, res) => {
   try {
     const configPath = path.join(__dirname, "public/config.json");
@@ -81,13 +120,13 @@ app.get("/api/config", (req, res) => {
       res.json({});
     }
   } catch (err) {
-    console.error("❌ Erreur lecture config.json:", err.message);
+    console.error(" Erreur lecture config.json:", err.message);
     res.status(500).json({ error: "Impossible de charger la config" });
   }
 });
 
 app.post("/api/order", async (req, res) => {
-  console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
+  console.log("Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
   try {
     const order = req.body;
     order.date = new Date().toISOString();
@@ -106,40 +145,38 @@ app.post("/api/order", async (req, res) => {
     orders.push(order);
     fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
 
-    console.log("🧾 Nouvelle commande enregistrée:", order.orderId);
+    console.log("Nouvelle commande enregistrée:", order.orderId);
 
-    // ✅ RÉPOND IMMÉDIATEMENT AU CLIENT (ne bloque pas la redirection)
     res.json({ success: true, orderId: order.orderId });
 
-    // ✅ Génère la facture + envoie l'email EN ARRIÈRE-PLAN (après la réponse)
     (async () => {
       try {
         const invoicePath = path.join(invoicesDir, `facture_${order.orderId}.pdf`);
         await generateInvoice(order, invoicePath);
-        console.log("✅ Facture PDF générée:", invoicePath);
+        console.log(" Facture PDF générée:", invoicePath);
 
         if (order.customer?.email) {
-          console.log("📧 Envoi email à:", order.customer.email);
+          console.log("Envoi email à:", order.customer.email);
           const emailSent = await sendInvoiceEmail(
             order.customer.email,
             order.customer.name,
             invoicePath,
             order
           );
-          console.log(emailSent ? "✅ Email envoyé" : "⚠️ Échec envoi email");
+          console.log(emailSent ? " Email envoyé" : " Échec envoi email");
         }
       } catch (bgError) {
-        console.error("❌ Erreur en arrière-plan (facture/email):", bgError.message);
+        console.error(" Erreur en arrière-plan (facture/email):", bgError.message);
       }
     })();
 
   } catch (err) {
-    console.error("❌ Erreur enregistrement commande:", err.message);
+    console.error(" Erreur enregistrement commande:", err.message);
     res.status(500).json({ error: "Impossible d'enregistrer la commande" });
   }
 });
 
-// ✅ CRÉER UNE COMMANDE PAYPAL
+//  CRÉER UNE COMMANDE PAYPAL
 app.post("/api/paypal/create-order", async (req, res) => {
   try {
     const { items, total } = req.body;
@@ -180,7 +217,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
                 currency_code: "EUR",
                 value: Number(item.price).toFixed(2),
               },
-              quantity: String(item.qty), // ✅ FIX : "qty" au lieu de "quantity" + String()
+              quantity: String(item.qty),
             })),
           },
         ],
@@ -200,13 +237,13 @@ app.post("/api/paypal/create-order", async (req, res) => {
       }
     );
 
-    console.log("✅ Commande créée:", response.data.id);
+    console.log(" Commande créée:", response.data.id);
     res.json({
-      orderId: response.data.id, // ✅ FIX : "orderId" au lieu de "id"
+      orderId: response.data.id,
       status: response.data.status,
     });
   } catch (error) {
-    console.error("❌ Erreur création:", JSON.stringify(error.response?.data, null, 2) || error.message);
+    console.error(" Erreur création:", JSON.stringify(error.response?.data, null, 2) || error.message);
     res.status(500).json({
       error: error.response?.data?.message || "Erreur serveur",
       details: error.response?.data,
@@ -214,10 +251,10 @@ app.post("/api/paypal/create-order", async (req, res) => {
   }
 });
 
-// ✅ CAPTURER LA COMMANDE PAYPAL
+//  CAPTURER LA COMMANDE PAYPAL
 app.post("/api/paypal/capture-order", async (req, res) => {
   try {
-    const { orderId } = req.body; // ✅ le front envoie "orderId" (minuscule d)
+    const { orderId } = req.body;
 
     if (!orderId) {
       return res.status(400).json({ error: "Order ID manquant" });
@@ -242,15 +279,15 @@ app.post("/api/paypal/capture-order", async (req, res) => {
     const transactionId = response.data.purchase_units?.[0]?.payments?.captures?.[0]?.id 
                            || response.data.id;
 
-    console.log("✅ Paiement capturé:", status, "| Transaction:", transactionId);
+    console.log(" Paiement capturé:", status, "| Transaction:", transactionId);
 
     res.json({
-      success: status === "COMPLETED", // ✅ ton front vérifie "result.success"
+      success: status === "COMPLETED",
       status: status,
-      transactionId: transactionId,     // ✅ ton front utilise "result.transactionId"
+      transactionId: transactionId,
     });
   } catch (error) {
-    console.error("❌ Erreur capture:", error.response?.data || error.message);
+    console.error(" Erreur capture:", error.response?.data || error.message);
     res.status(500).json({
       success: false,
       error: error.response?.data?.message || "Erreur serveur",
@@ -274,8 +311,8 @@ app.get("/", (req, res) => {
 // Démarrage
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Serveur lancé sur le port ${PORT}`);
-  console.log(`📍 http://localhost:${PORT}`);
+  console.log(`Serveur lancé sur le port ${PORT}`);
+  console.log(`http://localhost:${PORT}`);
 });
 
 module.exports = app;
