@@ -1,9 +1,9 @@
-// // server.js
+// server.js
 const dotenv = require("dotenv");
 dotenv.config(); // TOUJOURS EN PREMIER
 
 const express = require("express");
-const helmet = require("helmet");  // ✅ IMPORT HELMET ICI
+const helmet = require("helmet");
 const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
@@ -12,7 +12,7 @@ const rateLimit = require("express-rate-limit");
 const { generateInvoice } = require("./invoice-generator");
 const { sendInvoiceEmail } = require("./email-sender");
 
-const app = express();  // ✅ UNE SEULE DÉCLARATION
+const app = express();
 
 // 📁 CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS
 const dataDir = path.join(__dirname, "data");
@@ -31,16 +31,16 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
-        "https://www.paypal.com",  // ✅ AJOUTE
-        "https://www.paypalobjects.com",  // ✅ ET CA
+        "https://www.paypal.com",
+        "https://www.paypalobjects.com",
       ],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      frameSrc: ["https://www.paypal.com"],  // ✅ Pour l'iframe PayPal
+      frameSrc: ["https://www.paypal.com"],
       connectSrc: [
         "'self'",
-        "https://www.paypal.com",  // ✅ Pour les appels API
-        "https://api-m.paypal.com",  // ✅ Pour l'API PayPal
+        "https://www.paypal.com",
+        "https://api-m.paypal.com",
       ],
     },
   },
@@ -50,9 +50,25 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
-app.use(limiter);
+// ✅ TRUST PROXY POUR RENDER
+app.set('trust proxy', 1);
 
-// ... LE RESTE DU CODE ...
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+// ✅ RATE LIMIT (DÉFINI AVANT D'ÊTRE UTILISÉ)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    return req.ip === '::1' || req.ip === '127.0.0.1';
+  }
+});
+
+app.use(limiter); // ✅ UNE SEULE FOIS
 
 // ✅ PAYPAL CONFIG - PRODUCTION
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
@@ -95,7 +111,7 @@ app.get("/api/config", (req, res) => {
 });
 
 app.post("/api/order", async (req, res) => {
-	 console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
+     console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
   try {
     const order = req.body;
     order.date = new Date().toISOString();
@@ -144,7 +160,6 @@ app.post("/api/order", async (req, res) => {
       }
     } catch (invoiceError) {
       console.error("❌ Erreur génération facture/email:", invoiceError.message);
-      // On continue même si la facture échoue : la commande est déjà enregistrée
     }
 
     res.json({ success: true, orderId: order.orderId });
@@ -195,7 +210,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
                 currency_code: "EUR",
                 value: Number(item.price).toFixed(2),
               },
-              quantity: String(item.qty), // ✅ FIX : "qty" au lieu de "quantity" + String()
+              quantity: String(item.qty),
             })),
           },
         ],
@@ -217,7 +232,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
 
     console.log("✅ Commande créée:", response.data.id);
     res.json({
-      orderId: response.data.id, // ✅ FIX : "orderId" au lieu de "id"
+      orderId: response.data.id,
       status: response.data.status,
     });
   } catch (error) {
@@ -232,7 +247,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
 // ✅ CAPTURER LA COMMANDE PAYPAL
 app.post("/api/paypal/capture-order", async (req, res) => {
   try {
-    const { orderId } = req.body; // ✅ le front envoie "orderId" (minuscule d)
+    const { orderId } = req.body;
 
     if (!orderId) {
       return res.status(400).json({ error: "Order ID manquant" });
@@ -260,9 +275,9 @@ app.post("/api/paypal/capture-order", async (req, res) => {
     console.log("✅ Paiement capturé:", status, "| Transaction:", transactionId);
 
     res.json({
-      success: status === "COMPLETED", // ✅ ton front vérifie "result.success"
+      success: status === "COMPLETED",
       status: status,
-      transactionId: transactionId,     // ✅ ton front utilise "result.transactionId"
+      transactionId: transactionId,
     });
   } catch (error) {
     console.error("❌ Erreur capture:", error.response?.data || error.message);
