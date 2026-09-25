@@ -1,18 +1,20 @@
-// server.js
+// // server.js
 const dotenv = require("dotenv");
-dotenv.config(); // ✅ TOUJOURS EN PREMIER, avant tout le reste
+dotenv.config(); // TOUJOURS EN PREMIER
 
-const { generateInvoice } = require("./invoice-generator");
-const { sendInvoiceEmail } = require("./email-sender");
 const express = require("express");
+const helmet = require("helmet");  // ✅ IMPORT HELMET ICI
 const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 
-const app = express();
+const { generateInvoice } = require("./invoice-generator");
+const { sendInvoiceEmail } = require("./email-sender");
 
-// ✅ CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
+const app = express();  // ✅ UNE SEULE DÉCLARATION
+
+// 📁 CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS
 const dataDir = path.join(__dirname, "data");
 const invoicesDir = path.join(__dirname, "invoices");
 
@@ -22,10 +24,7 @@ if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
 const ordersFile = path.join(dataDir, "orders.json");
 if (!fs.existsSync(ordersFile)) fs.writeFileSync(ordersFile, JSON.stringify([]));
 
-const helmet = require('helmet');
-const app = require('express')();
-
-// ⚠️ HELMET DOIT ÊTRE AVANT LES AUTRES ROUTES
+// ✅ HELMET EN PREMIER (avant tout le reste)
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -41,10 +40,6 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
-// PUIS tes routes
-app.use(express.static('public'));
-app.get('/', (req, res) => { ... });
-
 // ✅ TRUST PROXY POUR RENDER
 app.set('trust proxy', 1);
 
@@ -52,7 +47,7 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-//  RATE LIMIT SANS PROBLÈME IPv6
+// ✅ RATE LIMIT SANS PROBLÈME IPv6
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -65,9 +60,7 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-
-
-app.use(limiter);
+// ... LE RESTE DU CODE ...
 
 // ✅ PAYPAL CONFIG - PRODUCTION
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
