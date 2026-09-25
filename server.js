@@ -231,8 +231,8 @@ app.post("/api/paypal/create-order", async (req, res) => {
           },
         ],
         application_context: {
-          return_url: `${process.env.RETURN_URL || "http://localhost:3000"}/success`,
-          cancel_url: `${process.env.RETURN_URL || "http://localhost:3000"}/cancel`,
+          return_url: `${process.env.RETURN_URL || "https://em3dshop.fr"}/success`,
+          cancel_url: `${process.env.RETURN_URL || "https://em3dshop.fr"}/cancel`,
           brand_name: "ME3D Shop",
           locale: "fr-FR",
           user_action: "PAY_NOW",
