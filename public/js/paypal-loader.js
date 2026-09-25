@@ -24,7 +24,7 @@ async function loadPayPalSDK() {
 
     document.head.appendChild(script);
   } catch (err) {
-    console.error("❌ Erreur config PayPal :", err);
+    console.error(" Erreur config PayPal :", err);
   }
 }
 
