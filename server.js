@@ -1,9 +1,9 @@
-// server.js
+// // server.js
 const dotenv = require("dotenv");
 dotenv.config(); // TOUJOURS EN PREMIER
 
 const express = require("express");
-const helmet = require("helmet");
+const helmet = require("helmet");  // ✅ IMPORT HELMET ICI
 const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
@@ -12,7 +12,7 @@ const rateLimit = require("express-rate-limit");
 const { generateInvoice } = require("./invoice-generator");
 const { sendInvoiceEmail } = require("./email-sender");
 
-const app = express();
+const app = express();  // ✅ UNE SEULE DÉCLARATION
 
 // 📁 CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS
 const dataDir = path.join(__dirname, "data");
@@ -29,19 +29,9 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        "https://www.paypal.com",
-        "https://www.paypalobjects.com",
-      ],
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      frameSrc: ["https://www.paypal.com"],
-      connectSrc: [
-        "'self'",
-        "https://www.paypal.com",
-        "https://api-m.paypal.com",
-      ],
     },
   },
   hsts: { maxAge: 31536000, includeSubDomains: true },
@@ -57,7 +47,7 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// ✅ RATE LIMIT (DÉFINI AVANT D'ÊTRE UTILISÉ)
+// ✅ RATE LIMIT SANS PROBLÈME IPv6
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -68,7 +58,9 @@ const limiter = rateLimit({
   }
 });
 
-app.use(limiter); // ✅ UNE SEULE FOIS
+app.use(limiter);
+
+// ... LE RESTE DU CODE ...
 
 // ✅ PAYPAL CONFIG - PRODUCTION
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
@@ -111,7 +103,7 @@ app.get("/api/config", (req, res) => {
 });
 
 app.post("/api/order", async (req, res) => {
-     console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
+	 console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
   try {
     const order = req.body;
     order.date = new Date().toISOString();
@@ -160,6 +152,7 @@ app.post("/api/order", async (req, res) => {
       }
     } catch (invoiceError) {
       console.error("❌ Erreur génération facture/email:", invoiceError.message);
+      // On continue même si la facture échoue : la commande est déjà enregistrée
     }
 
     res.json({ success: true, orderId: order.orderId });
@@ -210,7 +203,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
                 currency_code: "EUR",
                 value: Number(item.price).toFixed(2),
               },
-              quantity: String(item.qty),
+              quantity: String(item.qty), // ✅ FIX : "qty" au lieu de "quantity" + String()
             })),
           },
         ],
@@ -232,7 +225,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
 
     console.log("✅ Commande créée:", response.data.id);
     res.json({
-      orderId: response.data.id,
+      orderId: response.data.id, // ✅ FIX : "orderId" au lieu de "id"
       status: response.data.status,
     });
   } catch (error) {
@@ -247,7 +240,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
 // ✅ CAPTURER LA COMMANDE PAYPAL
 app.post("/api/paypal/capture-order", async (req, res) => {
   try {
-    const { orderId } = req.body;
+    const { orderId } = req.body; // ✅ le front envoie "orderId" (minuscule d)
 
     if (!orderId) {
       return res.status(400).json({ error: "Order ID manquant" });
@@ -275,9 +268,9 @@ app.post("/api/paypal/capture-order", async (req, res) => {
     console.log("✅ Paiement capturé:", status, "| Transaction:", transactionId);
 
     res.json({
-      success: status === "COMPLETED",
+      success: status === "COMPLETED", // ✅ ton front vérifie "result.success"
       status: status,
-      transactionId: transactionId,
+      transactionId: transactionId,     // ✅ ton front utilise "result.transactionId"
     });
   } catch (error) {
     console.error("❌ Erreur capture:", error.response?.data || error.message);
