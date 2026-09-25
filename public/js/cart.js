@@ -211,35 +211,32 @@ function renderPayPalButton() {
   document.getElementById("paypal-button-container").innerHTML = "";
 
   paypal.Buttons({
-  style: {
-    layout: 'vertical',
-    color: 'gold',
-    shape: 'rect',
-    label: 'paypal',
-    height: 45
-  },
+    style: {
+      layout: 'vertical',
+      color: 'gold',
+      shape: 'rect',
+      label: 'paypal',
+      height: 45
+    },
 
-  // 👇 AJOUTE CETTE LIGNE
-  fundingSource: paypal.FUNDING.PAYPAL,
+    fundingSource: paypal.FUNDING.PAYPAL,
 
-  createOrder: function(data, actions) {
-    return fetch("/api/paypal/create-order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: cart,
-        total: total.toFixed(2),
-        customer: { name, email, address, pickup }
+    createOrder: function(data, actions) {
+      return fetch("/api/paypal/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart,
+          total: total.toFixed(2),
+          customer: { name, email, address, pickup }
+        })
       })
-    })
-    .then(res => res.json())
-    .then(order => {
-      if (!order.orderId) throw new Error("Erreur création commande");
-      return order.orderId;
-    });
-  },
-  // ... reste inchangé
-})
+      .then(res => res.json())
+      .then(order => {
+        if (!order.orderId) throw new Error("Erreur création commande");
+        return order.orderId;
+      });
+    },
 
     onApprove: function(data, actions) {
       console.log("✅ Paiement approuvé par l'utilisateur");
@@ -272,7 +269,7 @@ function renderPayPalButton() {
               pickup: document.getElementById("pickup-checkbox").checked
             },
             transactionId: result.transactionId,
-            total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
+            total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) +
                    (document.getElementById("pickup-checkbox").checked ? 0 : 3.99)
           })
         });
@@ -282,21 +279,19 @@ function renderPayPalButton() {
         return orderRes.json();
       })
       .then(orderData => {
-  console.log("Order saved:", orderData);
-  
-  if (orderData.success) {
-    // REDIRIGE vers la page de succès
-    window.location.href = "/success.html?orderId=" + orderData.orderId;
-    return;
-  } else {
-    throw new Error(orderData.error || "Erreur enregistrement commande");
-  }
-})
+        console.log("Order saved:", orderData);
+
+        if (orderData.success) {
+          window.location.href = "/success.html?orderId=" + orderData.orderId;
+          return;
+        } else {
+          throw new Error(orderData.error || "Erreur enregistrement commande");
+        }
+      })
       .catch(err => {
         console.error("Erreur paiement :", err);
         alert("Erreur : " + err.message);
-        
-        // Force fermeture même en cas d'erreur
+
         document.getElementById("paypal-modal").classList.add("hidden");
         document.getElementById("paypal-button-container").innerHTML = "";
         document.getElementById("proceed-to-payment").classList.remove("hidden");
@@ -309,6 +304,7 @@ function renderPayPalButton() {
       alert("Erreur de paiement. Réessaie.");
       closePayPalModal();
     }
+
   }).render("#paypal-button-container");
 }
 
