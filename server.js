@@ -87,12 +87,11 @@ app.get("/api/config", (req, res) => {
 });
 
 app.post("/api/order", async (req, res) => {
-	 console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
+  console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
   try {
     const order = req.body;
     order.date = new Date().toISOString();
 
-    // ✅ Génère un orderId s'il n'existe pas
     if (!order.orderId) {
       order.orderId = "ME3D-" + Date.now();
     }
@@ -109,37 +108,31 @@ app.post("/api/order", async (req, res) => {
 
     console.log("🧾 Nouvelle commande enregistrée:", order.orderId);
 
-    // ✅ Génère la facture PDF
-    const invoicePath = path.join(invoicesDir, `facture_${order.orderId}.pdf`);
-    
-    try {
-      await generateInvoice(order, invoicePath);
-      console.log("✅ Facture PDF générée:", invoicePath);
-
-      // ✅ Envoie l'email si on a une adresse client
-      if (order.customer?.email) {
-        console.log("📧 Envoi email à:", order.customer.email);
-        const emailSent = await sendInvoiceEmail(
-          order.customer.email,
-          order.customer.name,
-          invoicePath,
-          order
-        );
-
-        if (emailSent) {
-          console.log("✅ Email envoyé avec succès");
-        } else {
-          console.warn("⚠️ Échec envoi email (voir logs ci-dessus)");
-        }
-      } else {
-        console.warn("⚠️ Pas d'email client, envoi ignoré");
-      }
-    } catch (invoiceError) {
-      console.error("❌ Erreur génération facture/email:", invoiceError.message);
-      // On continue même si la facture échoue : la commande est déjà enregistrée
-    }
-
+    // ✅ RÉPOND IMMÉDIATEMENT AU CLIENT (ne bloque pas la redirection)
     res.json({ success: true, orderId: order.orderId });
+
+    // ✅ Génère la facture + envoie l'email EN ARRIÈRE-PLAN (après la réponse)
+    (async () => {
+      try {
+        const invoicePath = path.join(invoicesDir, `facture_${order.orderId}.pdf`);
+        await generateInvoice(order, invoicePath);
+        console.log("✅ Facture PDF générée:", invoicePath);
+
+        if (order.customer?.email) {
+          console.log("📧 Envoi email à:", order.customer.email);
+          const emailSent = await sendInvoiceEmail(
+            order.customer.email,
+            order.customer.name,
+            invoicePath,
+            order
+          );
+          console.log(emailSent ? "✅ Email envoyé" : "⚠️ Échec envoi email");
+        }
+      } catch (bgError) {
+        console.error("❌ Erreur en arrière-plan (facture/email):", bgError.message);
+      }
+    })();
+
   } catch (err) {
     console.error("❌ Erreur enregistrement commande:", err.message);
     res.status(500).json({ error: "Impossible d'enregistrer la commande" });
