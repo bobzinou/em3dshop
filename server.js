@@ -22,6 +22,29 @@ if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
 const ordersFile = path.join(dataDir, "orders.json");
 if (!fs.existsSync(ordersFile)) fs.writeFileSync(ordersFile, JSON.stringify([]));
 
+const helmet = require('helmet');
+const app = require('express')();
+
+// ⚠️ HELMET DOIT ÊTRE AVANT LES AUTRES ROUTES
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  hsts: { maxAge: 31536000, includeSubDomains: true },
+  xContentTypeOptions: true,
+  xFrameOptions: { action: 'sameorigin' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+
+// PUIS tes routes
+app.use(express.static('public'));
+app.get('/', (req, res) => { ... });
+
 // ✅ TRUST PROXY POUR RENDER
 app.set('trust proxy', 1);
 
