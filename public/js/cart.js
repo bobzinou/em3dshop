@@ -211,30 +211,35 @@ function renderPayPalButton() {
   document.getElementById("paypal-button-container").innerHTML = "";
 
   paypal.Buttons({
-    createOrder: function(data, actions) {
-      return fetch("/api/paypal/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cart,
-          total: total.toFixed(2),
-          customer: {
-            name: name,
-            email: email,
-            address: address,
-            pickup: pickup
-          }
-        })
+  style: {
+    layout: 'vertical',
+    color: 'gold',
+    shape: 'rect',
+    label: 'paypal',
+    height: 45
+  },
+
+  // 👇 AJOUTE CETTE LIGNE
+  fundingSource: paypal.FUNDING.PAYPAL,
+
+  createOrder: function(data, actions) {
+    return fetch("/api/paypal/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: cart,
+        total: total.toFixed(2),
+        customer: { name, email, address, pickup }
       })
-      .then(res => res.json())
-      .then(order => {
-        if (!order.orderId) {
-          console.error("Pas d'orderId reçu :", order);
-          throw new Error("Erreur création commande PayPal");
-        }
-        return order.orderId;
-      });
-    },
+    })
+    .then(res => res.json())
+    .then(order => {
+      if (!order.orderId) throw new Error("Erreur création commande");
+      return order.orderId;
+    });
+  },
+  // ... reste inchangé
+})
 
     onApprove: function(data, actions) {
       console.log("✅ Paiement approuvé par l'utilisateur");

@@ -236,6 +236,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
           brand_name: "ME3D Shop",
           locale: "fr-FR",
           user_action: "PAY_NOW",
+		  shipping_preference: "NO_SHIPPING",   // 👈 AJOUTE CETTE LIGNE
         },
       },
       {
