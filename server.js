@@ -55,6 +55,15 @@ app.use(
   })
 );
 
+//  PERMISSIONS POLICY - contrôle les APIs navigateur
+app.use((req, res, next) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "geolocation=(), microphone=(), camera=(), payment=(self)"
+  );
+  next();
+});
+
 //  CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
 const dataDir = path.join(__dirname, "data");
 const invoicesDir = path.join(__dirname, "invoices");
