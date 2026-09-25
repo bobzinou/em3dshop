@@ -219,7 +219,6 @@ function renderPayPalButton() {
       height: 45
     },
 
-    fundingSource: paypal.FUNDING.PAYPAL,
 
     createOrder: function(data, actions) {
       return fetch("/api/paypal/create-order", {
