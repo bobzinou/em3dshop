@@ -29,9 +29,19 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://www.paypal.com",  // ✅ AJOUTE
+        "https://www.paypalobjects.com",  // ✅ ET CA
+      ],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
+      frameSrc: ["https://www.paypal.com"],  // ✅ Pour l'iframe PayPal
+      connectSrc: [
+        "'self'",
+        "https://www.paypal.com",  // ✅ Pour les appels API
+        "https://api-m.paypal.com",  // ✅ Pour l'API PayPal
+      ],
     },
   },
   hsts: { maxAge: 31536000, includeSubDomains: true },
@@ -39,24 +49,6 @@ app.use(helmet({
   xFrameOptions: { action: 'sameorigin' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
-
-// ✅ TRUST PROXY POUR RENDER
-app.set('trust proxy', 1);
-
-// Middleware
-app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
-
-// ✅ RATE LIMIT SANS PROBLÈME IPv6
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    return req.ip === '::1' || req.ip === '127.0.0.1';
-  }
-});
 
 app.use(limiter);
 
