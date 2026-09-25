@@ -211,15 +211,6 @@ function renderPayPalButton() {
   document.getElementById("paypal-button-container").innerHTML = "";
 
   paypal.Buttons({
-    style: {
-      layout: 'vertical',
-      color: 'gold',
-      shape: 'rect',
-      label: 'paypal',
-      height: 45
-    },
-
-
     createOrder: function(data, actions) {
       return fetch("/api/paypal/create-order", {
         method: "POST",
@@ -227,12 +218,20 @@ function renderPayPalButton() {
         body: JSON.stringify({
           items: cart,
           total: total.toFixed(2),
-          customer: { name, email, address, pickup }
+          customer: {
+            name: name,
+            email: email,
+            address: address,
+            pickup: pickup
+          }
         })
       })
       .then(res => res.json())
       .then(order => {
-        if (!order.orderId) throw new Error("Erreur création commande");
+        if (!order.orderId) {
+          console.error("Pas d'orderId reçu :", order);
+          throw new Error("Erreur création commande PayPal");
+        }
         return order.orderId;
       });
     },
@@ -268,7 +267,7 @@ function renderPayPalButton() {
               pickup: document.getElementById("pickup-checkbox").checked
             },
             transactionId: result.transactionId,
-            total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) +
+            total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
                    (document.getElementById("pickup-checkbox").checked ? 0 : 3.99)
           })
         });
@@ -278,19 +277,21 @@ function renderPayPalButton() {
         return orderRes.json();
       })
       .then(orderData => {
-        console.log("Order saved:", orderData);
-
-        if (orderData.success) {
-          window.location.href = "/success.html?orderId=" + orderData.orderId;
-          return;
-        } else {
-          throw new Error(orderData.error || "Erreur enregistrement commande");
-        }
-      })
+  console.log("Order saved:", orderData);
+  
+  if (orderData.success) {
+    // REDIRIGE vers la page de succès
+    window.location.href = "/success.html?orderId=" + orderData.orderId;
+    return;
+  } else {
+    throw new Error(orderData.error || "Erreur enregistrement commande");
+  }
+})
       .catch(err => {
         console.error("Erreur paiement :", err);
         alert("Erreur : " + err.message);
-
+        
+        // Force fermeture même en cas d'erreur
         document.getElementById("paypal-modal").classList.add("hidden");
         document.getElementById("paypal-button-container").innerHTML = "";
         document.getElementById("proceed-to-payment").classList.remove("hidden");
@@ -303,7 +304,6 @@ function renderPayPalButton() {
       alert("Erreur de paiement. Réessaie.");
       closePayPalModal();
     }
-
   }).render("#paypal-button-container");
 }
 
