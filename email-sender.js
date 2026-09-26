@@ -132,7 +132,7 @@ Facture générée et envoyée automatiquement au client.
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email admin envoyé:', info.response);
+    console.log(Email admin envoyé:', info.response);
     return true;
 
   } catch (err) {
@@ -141,7 +141,7 @@ Facture générée et envoyée automatiquement au client.
   }
 }
 
-// ✅ Export des fonctions (UNE SEULE FOIS, à la fin)
+// Export des fonctions (UNE SEULE FOIS, à la fin)
 module.exports = {
   sendInvoiceEmail,
   sendAdminNotification

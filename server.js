@@ -23,14 +23,12 @@ if (!fs.existsSync(ordersFile)) fs.writeFileSync(ordersFile, JSON.stringify([]))
 
 // ✅ TRUST PROXY POUR RENDER
 app.set('trust proxy', 1);
-		   
-			
+		   		
 
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 			
-
 
 //  RATE LIMIT SANS PROBLÈME IPv6
 const limiter = rateLimit({
