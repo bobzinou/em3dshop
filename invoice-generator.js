@@ -60,17 +60,18 @@ function generateInvoice(order, outputPath) {
       let subtotal = 0;
 
       order.items.forEach(item => {
-        const lineTotal = (item.price * item.qty).toFixed(2);
-        subtotal += parseFloat(lineTotal);
+  const qty = Number(item.qty || item.quantity || 1);
+  const price = Number(item.price) || 0;
+  const lineTotal = (price * qty).toFixed(2);
+  subtotal += parseFloat(lineTotal);
 
-        // Texte
-        doc.text(item.name.substring(0, 35), 50, yPosition, { width: 220 });
-        doc.text(item.qty.toString(), 280, yPosition);
-        doc.text(item.price.toFixed(2) + '€', 330, yPosition);
-        doc.text(lineTotal + '€', 430, yPosition);
+  doc.text(item.name.substring(0, 35), 50, yPosition, { width: 220 });
+  doc.text(qty.toString(), 280, yPosition);
+  doc.text(price.toFixed(2) + '€', 330, yPosition);
+  doc.text(lineTotal + '€', 430, yPosition);
 
-        yPosition += 20;
-      });
+  yPosition += 20;
+});
 
       // Sous-total
       yPosition += 10;

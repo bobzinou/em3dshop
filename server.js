@@ -300,7 +300,7 @@ app.post("/api/paypal/capture-order", async (req, res) => {
 
 // Routes statiques
 app.get("/success", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/success.html"));
+  res.sendFile(path.join(__dirname, "public/success"));
 });
    
 app.get("/cancel", (req, res) => {
