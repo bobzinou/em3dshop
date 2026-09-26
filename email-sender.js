@@ -15,7 +15,6 @@ const transporter = nodemailer.createTransport({
 // ✅ Fonction pour envoyer la facture au CLIENT
 async function sendInvoiceEmail(clientEmail, clientName, invoicePath, order) {
   try {
-    // Vérifie que le fichier PDF existe
     if (!fs.existsSync(invoicePath)) {
       console.warn(`⚠️ Fichier PDF introuvable: ${invoicePath}`);
       return false;
@@ -98,71 +97,51 @@ async function sendInvoiceEmail(clientEmail, clientName, invoicePath, order) {
   }
 }
 
-// ✅ Fonction pour t'envoyer une NOTIFICATION (nouvellement ajoutée)
+// ✅ Fonction pour notifier l'ADMIN
 async function sendAdminNotification(order) {
   try {
-    const totalAmount = order.customer?.total || order.total || "N/A";
+    const itemsList = order.items
+      ?.map(item => `- ${item.name} x${item.qty || item.quantity} : ${item.price}€`)
+      .join("\n") || "Détails non disponibles";
 
     const mailOptions = {
       from: process.env.GMAIL_USER,
-      to: process.env.GMAIL_ADMIN || process.env.GMAIL_USER, // Envoie à TOI
-      subject: `🔔 NOUVELLE COMMANDE - ${order.orderId}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff3cd; border-left: 4px solid #d63031;">
-          <h2 style="color: #d63031; margin-top: 0;">🚨 NOUVELLE COMMANDE !</h2>
-          
-          <div style="background: white; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p style="font-size: 14px;"><strong>📦 Commande :</strong> ${order.orderId}</p>
-            <p style="font-size: 14px;"><strong>👤 Client :</strong> ${order.customer?.name || 'N/A'}</p>
-            <p style="font-size: 14px;"><strong>📧 Email :</strong> ${order.customer?.email || 'N/A'}</p>
-            <p style="font-size: 14px;"><strong>📱 Téléphone :</strong> ${order.customer?.phone || 'N/A'}</p>
-            <p style="font-size: 14px;"><strong>💰 Montant :</strong> <span style="font-size: 18px; color: #d63031;"><strong>${totalAmount}€</strong></span></p>
-            <p style="font-size: 14px;"><strong>📅 Date :</strong> ${new Date(order.date).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-          </div>
-          
-          <h4>📍 Livraison à :</h4>
-          <p style="font-size: 14px; line-height: 1.8;">
-            ${order.customer?.address || 'N/A'}<br>
-            ${order.customer?.zipcode || ''} ${order.customer?.city || ''}<br>
-            <strong>Type :</strong> ${order.customer?.deliveryType === 'hand' ? '🤝 En main propre' : '📬 Par courrier'}
-          </p>
-          
-          <h4>📦 Détail des articles :</h4>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr style="background: #d63031; color: white;">
-              <th style="padding: 10px; text-align: left;">Produit</th>
-              <th style="padding: 10px; text-align: center;">Quantité</th>
-              <th style="padding: 10px; text-align: right;">Prix</th>
-            </tr>
-            ${order.items?.map(item => `
-              <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 10px;">${item.name}</td>
-                <td style="padding: 10px; text-align: center;">${item.qty || item.quantity}</td>
-                <td style="padding: 10px; text-align: right;">${Number(item.price).toFixed(2)}€</td>
-              </tr>
-            `).join('') || '<tr><td colspan="3" style="padding: 10px;">-</td></tr>'}
-          </table>
-          
-          <p style="margin-top: 30px; text-align: center;">
-            <a href="${process.env.RETURN_URL || 'http://localhost:3000'}/admin" style="background: #d63031; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              📊 Voir le dashboard
-            </a>
-          </p>
-        </div>
-      `
+      to: process.env.ADMIN_EMAIL,
+      subject: `🛒 Nouvelle commande reçue - ${order.orderId}`,
+      text: `
+Nouvelle commande enregistrée !
+
+📦 N° commande : ${order.orderId}
+📅 Date : ${new Date(order.date).toLocaleString("fr-FR")}
+
+👤 Client :
+- Nom : ${order.customer?.name || "N/A"}
+- Email : ${order.customer?.email || "N/A"}
+
+🏠 Adresse de livraison :
+${order.customer?.address || "N/A"}
+
+🛍️ Articles commandés :
+${itemsList}
+
+💰 Total : ${order.total || order.customer?.total || "N/A"}€
+
+---
+Facture générée et envoyée automatiquement au client.
+      `,
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email admin envoyé');
+    console.log('✅ Email admin envoyé:', info.response);
     return true;
 
   } catch (err) {
-    console.error('❌ Erreur envoi email admin:', err.message);
+    console.error("❌ Erreur envoi notification admin:", err.message);
     return false;
   }
 }
 
-// Export des fonctions
+// ✅ Export des fonctions (UNE SEULE FOIS, à la fin)
 module.exports = {
   sendInvoiceEmail,
   sendAdminNotification

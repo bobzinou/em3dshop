@@ -12,7 +12,7 @@
       "id": "faucheur",
       "name": "Figurine Faucheur",
       "category": "Figurines",
-      "price": 4.99,
+      "price": 3.99,
       "description": "Figurine du faucheur avec citrouille sculptée, impression 3D détaillée.",
       "images": ["faucheur-1.png", "faucheur-dos.png"]
     },
@@ -20,7 +20,7 @@
       "id": "duo-fantomes",
       "name": "Duo de fantômes éclairés",
       "category": "Décorations",
-      "price": 10.99,
+      "price": 8.99,
       "description": "Duo de fantômes à éclairer (lumière non fournie), idéal pour illuminer votre déco d'Halloween.",
       "images": ["duo-fantomes.png"]
     },
@@ -28,7 +28,7 @@
       "id": "citrouille-tricot",
       "name": "Citrouille effet tricoté",
       "category": "Décorations",
-      "price": 0.05,
+      "price": 0.01,
       "description": "Citrouille imprimée en 3D avec un effet tricoté très réaliste.",
       "images": ["citrouille-tricote.png", "citrouille-tricote-dos.png"]
     },
@@ -36,9 +36,17 @@
       "id": "stitch-halloween",
       "name": "Stitch d'Halloween",
       "category": "Figurines",
-      "price": 19.99,
+      "price": 15.99,
       "description": "Figurine Stitch version Halloween avec chapeau de sorcier.",
       "images": ["stitch-face.png", "stitch-cote.png", "stitch-dos.png"]
+    },
+	{
+      "id": "bol-fantome",
+      "name": "Bol à bonbons Fantôme",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Bol à bonsbons fantôme, idéel pour la récolte d'Halloween !",
+      "images": ["bol-fantome.png"]
     }
   ],
   "noel": [],

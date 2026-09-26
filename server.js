@@ -1,18 +1,17 @@
 // server.js
 const dotenv = require("dotenv");
-dotenv.config(); //TOUJOURS EN PREMIER, avant tout le reste
+dotenv.config(); // ✅ TOUJOURS EN PREMIER, avant tout le reste
 
 const { generateInvoice } = require("./invoice-generator");
-const { sendInvoiceEmail } = require("./email-sender");
 const express = require("express");
 const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
-
+const { sendInvoiceEmail, sendAdminNotification } = require("./email-sender"); // adapte le chemin
 const app = express();
 
-//  CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
+// ✅ CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
 const dataDir = path.join(__dirname, "data");
 const invoicesDir = path.join(__dirname, "invoices");
 
@@ -22,35 +21,16 @@ if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
 const ordersFile = path.join(dataDir, "orders.json");
 if (!fs.existsSync(ordersFile)) fs.writeFileSync(ordersFile, JSON.stringify([]));
 
-const helmet = require('helmet');
-const app = require('express')();
-
-// HELMET DOIT ÊTRE AVANT LES AUTRES ROUTES
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-  hsts: { maxAge: 31536000, includeSubDomains: true },
-  xContentTypeOptions: true,
-  xFrameOptions: { action: 'sameorigin' },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-}));
-
-// PUIS tes routes
-app.use(express.static('public'));
-app.get('/', (req, res) => { ... });
-
 // ✅ TRUST PROXY POUR RENDER
 app.set('trust proxy', 1);
+		   
+			
 
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+			
+
 
 //  RATE LIMIT SANS PROBLÈME IPv6
 const limiter = rateLimit({
@@ -65,9 +45,9 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-
-
 app.use(limiter);
+	   
+  
 
 // ✅ PAYPAL CONFIG - PRODUCTION
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
@@ -77,10 +57,12 @@ const PAYPAL_API = "https://api-m.paypal.com";
 console.log("🔐 PayPal Production Mode");
 console.log(`✅ Client ID: ${PAYPAL_CLIENT_ID?.substring(0, 20)}...`);
 
+
 // ✅ CONFIG PAYPAL POUR LE FRONT
 app.get("/api/paypal-config", (req, res) => {
   res.json({ clientId: PAYPAL_CLIENT_ID });
 });
+ 
 
 // ✅ LISTE DES PRODUITS
 app.get("/api/products", (req, res) => {
@@ -108,9 +90,11 @@ app.get("/api/config", (req, res) => {
     res.status(500).json({ error: "Impossible de charger la config" });
   }
 });
+	 
+ 
 
 app.post("/api/order", async (req, res) => {
-	 console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
+  console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
   try {
     const order = req.body;
     order.date = new Date().toISOString();
@@ -123,8 +107,23 @@ app.post("/api/order", async (req, res) => {
     const ordersPath = path.join(__dirname, "data/orders.json");
     let orders = [];
 
+    // ✅ FIX : lecture robuste (gère fichier vide ou corrompu)
     if (fs.existsSync(ordersPath)) {
-      orders = JSON.parse(fs.readFileSync(ordersPath, "utf-8"));
+      const fileContent = fs.readFileSync(ordersPath, "utf-8").trim();
+
+      if (fileContent) {
+        try {
+          orders = JSON.parse(fileContent);
+          if (!Array.isArray(orders)) {
+            console.warn("⚠️ orders.json ne contient pas un tableau, réinitialisation");
+            orders = [];
+          }
+        } catch (parseError) {
+          console.error("⚠️ orders.json corrompu, réinitialisation:", parseError.message);
+          orders = [];
+        }
+      }
+      // si fileContent est vide, orders reste = []
     }
 
     orders.push(order);
@@ -134,12 +133,11 @@ app.post("/api/order", async (req, res) => {
 
     // ✅ Génère la facture PDF
     const invoicePath = path.join(invoicesDir, `facture_${order.orderId}.pdf`);
-    
-    try {
+
+        try {
       await generateInvoice(order, invoicePath);
       console.log("✅ Facture PDF générée:", invoicePath);
 
-      // ✅ Envoie l'email si on a une adresse client
       if (order.customer?.email) {
         console.log("📧 Envoi email à:", order.customer.email);
         const emailSent = await sendInvoiceEmail(
@@ -157,15 +155,25 @@ app.post("/api/order", async (req, res) => {
       } else {
         console.warn("⚠️ Pas d'email client, envoi ignoré");
       }
+
+      // ✅ NOUVEAU : notification admin
+      const adminNotified = await sendAdminNotification(order);
+      if (adminNotified) {
+        console.log("✅ Notification admin envoyée");
+      } else {
+        console.warn("⚠️ Échec notification admin");
+      }
+
     } catch (invoiceError) {
       console.error("❌ Erreur génération facture/email:", invoiceError.message);
-      // On continue même si la facture échoue : la commande est déjà enregistrée
+      console.error(invoiceError.stack);
     }
 
     res.json({ success: true, orderId: order.orderId });
   } catch (err) {
     console.error("❌ Erreur enregistrement commande:", err.message);
-    res.status(500).json({ error: "Impossible d'enregistrer la commande" });
+    console.error(err.stack);
+    res.status(500).json({ error: "Impossible d'enregistrer la commande", details: err.message });
   }
 });
 
@@ -231,6 +239,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
     );
 
     console.log("✅ Commande créée:", response.data.id);
+	   
     res.json({
       orderId: response.data.id, // ✅ FIX : "orderId" au lieu de "id"
       status: response.data.status,
@@ -241,6 +250,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
       error: error.response?.data?.message || "Erreur serveur",
       details: error.response?.data,
     });
+	   
   }
 });
 
@@ -248,9 +258,12 @@ app.post("/api/paypal/create-order", async (req, res) => {
 app.post("/api/paypal/capture-order", async (req, res) => {
   try {
     const { orderId } = req.body; // ✅ le front envoie "orderId" (minuscule d)
+				  
 
     if (!orderId) {
       return res.status(400).json({ error: "Order ID manquant" });
+			 
+	   
     }
 
     const auth = Buffer.from(
@@ -273,7 +286,6 @@ app.post("/api/paypal/capture-order", async (req, res) => {
                            || response.data.id;
 
     console.log("✅ Paiement capturé:", status, "| Transaction:", transactionId);
-
     res.json({
       success: status === "COMPLETED", // ✅ ton front vérifie "result.success"
       status: status,
@@ -292,11 +304,11 @@ app.post("/api/paypal/capture-order", async (req, res) => {
 app.get("/success", (req, res) => {
   res.sendFile(path.join(__dirname, "public/success.html"));
 });
-
+   
 app.get("/cancel", (req, res) => {
   res.sendFile(path.join(__dirname, "public/cancel.html"));
 });
-
+				
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
@@ -305,7 +317,7 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Serveur lancé sur le port ${PORT}`);
-  console.log(`📍 http://localhost:${PORT}`);
+  console.log(`📍 http://localhost:${PORT}`);  
 });
 
 module.exports = app;
