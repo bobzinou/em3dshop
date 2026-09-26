@@ -11,7 +11,7 @@ const rateLimit = require("express-rate-limit");
 const { sendInvoiceEmail, sendAdminNotification } = require("./email-sender"); // adapte le chemin
 const app = express();
 
-// ✅ CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
+// CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
 const dataDir = path.join(__dirname, "data");
 const invoicesDir = path.join(__dirname, "invoices");
 
@@ -21,7 +21,7 @@ if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
 const ordersFile = path.join(dataDir, "orders.json");
 if (!fs.existsSync(ordersFile)) fs.writeFileSync(ordersFile, JSON.stringify([]));
 
-// ✅ TRUST PROXY POUR RENDER
+// TRUST PROXY POUR RENDER
 app.set('trust proxy', 1);
 		   		
 

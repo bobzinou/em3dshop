@@ -132,11 +132,11 @@ Facture générée et envoyée automatiquement au client.
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(Email admin envoyé:', info.response);
+    console.log('Email admin envoyé:', info.response);
     return true;
 
   } catch (err) {
-    console.error("❌ Erreur envoi notification admin:", err.message);
+    console.error("Erreur envoi notification admin:", err.message);
     return false;
   }
 }
