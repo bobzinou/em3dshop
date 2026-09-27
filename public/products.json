@@ -116,10 +116,10 @@
     },
     {
       "id": "maison-noel",
-      "name": "Maison de Noël",
+      "name": "Maisons de Noël",
       "category": "Décorations",
-      "price": 10.99,
-      "description": "Petite maison décorative de Noël, parfaite pour une mise en scène hivernale.",
+      "price": 12.99,
+      "description": "Lot de 5 Petites maison décorative de Noël, parfaite pour une mise en scène hivernale (lumière non fournie). Dimensions : 14cm pour la plus grande, et entre 8 et 10cm pour les autres.",
       "images": ["maison-noel.png"]
     },
     {
@@ -127,7 +127,7 @@
       "name": "Décoration de porte Merry Christmas",
       "category": "Décorations",
       "price": 8.99,
-      "description": "Décoration murale ou de porte 'Merry Christmas'.<strong>Dimensions : 27cms x 11cms</strong> ",
+      "description": "Décoration murale ou de porte 'Merry Christmas'.<strong>Dimensions : 27cm x 11cm</strong> ",
       "images": ["mery-christmas-door.png"]
     },
     {
@@ -137,6 +137,22 @@
       "price": 6.99,
       "description": "Lot de 4 Boules de Sapin décoratif personnalisable au choix, à préciser lors de la commande les modèles et prénoms.",
       "images": ["noel-sapin-1.png", "noel-sapin-2.png", "noel-sapin-3.png", "noel-sapin-4.png", "noel-sapin-5.png", "noel-sapin-6.png"]
+    },
+	{
+      "id": "boule-neige",
+      "name": "Lot de 10 Boules de neige de Noël.",
+      "category": "Décorations",
+      "price": 4.99,
+      "description": "Lot de 10 Boules de neige de Noël.",
+      "images": ["boule-neige-1.png", "boule-neige-2.png"]
+    },
+	{
+      "id": "kinder",
+      "name": "Lot de 3 Supports pour Kinder en forme de renne.",
+      "category": "Décorations",
+      "price": 3.99,
+      "description": "Lot de 3 Supports pour Kinder en forme de renne.<strong> Dimensions : 12cm</strong>",
+      "images": ["kinder-1.png", "kinder-2.png"]
     },
     {
       "id": "ours",
