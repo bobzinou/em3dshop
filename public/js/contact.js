@@ -11,11 +11,18 @@ document.getElementById("contact-form").addEventListener("submit", async functio
   status.className = "contact-status";
 
   const formData = new FormData(form);
-  const object = Object.fromEntries(formData);
+  
+  const object = {
+    _subject: "Nouveau message de contact - EM3DSHOP",  // 🔥 SUBJECT PERSONNALISÉ
+    name: formData.get("name"),
+    email: formData.get("email"),
+    message: formData.get("message")
+  };
+  
   const json = JSON.stringify(object);
 
   try {
-    const response = await fetch("https://api.web3forms.com/submit", {
+    const response = await fetch("https://formspree.io/f/xoevprqb", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -26,7 +33,7 @@ document.getElementById("contact-form").addEventListener("submit", async functio
 
     const result = await response.json();
 
-    if (result.success) {
+    if (result.ok) {
       status.textContent = "✅ Message envoyé avec succès ! Je te réponds rapidement.";
       status.classList.add("success");
       form.reset();
@@ -35,6 +42,7 @@ document.getElementById("contact-form").addEventListener("submit", async functio
       status.classList.add("error");
     }
   } catch (error) {
+    console.error(error);
     status.textContent = "❌ Erreur de connexion. Réessaie plus tard.";
     status.classList.add("error");
   } finally {

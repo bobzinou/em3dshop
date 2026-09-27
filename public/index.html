@@ -14,6 +14,7 @@
     <nav class="theme-nav" id="theme-nav">
       <!-- Boutons thèmes générés en JS -->
     </nav>
+    <a href="apropos.html" class="header-about-link">À propos</a>   <!-- 👈 ICI, ligne ajoutée -->
     <div class="cart-icon" id="cart-icon">
       🛒 <span id="cart-count">0</span>
     </div>
@@ -132,30 +133,33 @@
 <section id="contact" class="contact-section">
   <h2>Une demande spécifique ? Contactez-moi !</h2>
 
-  <form id="contact-form" class="contact-form">
-    <input type="hidden" name="access_key" value="bd8ebe9a-9da4-4bc4-9543-35cb3f581a21">
-    <input type="hidden" name="subject" value="Nouveau message depuis EM3DSHOP">
-    <input type="checkbox" name="botcheck" style="display:none">
+  <<form id="contact-form" class="contact-form">
+  <!-- Plus de hidden inputs ! -->
+  
+  <div class="form-group">
+    <label for="name">Nom</label>
+    <input type="text" id="name" name="name" required>
+  </div>
 
-    <div class="form-group">
-      <label for="name">Nom</label>
-      <input type="text" id="name" name="name" required>
-    </div>
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" required>
+  </div>
 
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" required>
-    </div>
+  <div class="form-group">
+    <label for="message">Message</label>
+    <textarea id="message" name="message" rows="6" required></textarea>
+  </div>
 
-    <div class="form-group">
-      <label for="message">Message</label>
-      <textarea id="message" name="message" rows="6" required></textarea>
-    </div>
+  <button type="submit" class="btn-primary" id="contact-submit">Envoyer le message</button>
+  <p id="contact-status" class="contact-status"></p>
+</form>
+</section>
 
-    <button type="submit" class="btn-primary" id="contact-submit">Envoyer le message</button>
-
-    <p id="contact-status" class="contact-status"></p>
-  </form>
+<section class="about-teaser">
+  <h2>Qui se cache derrière EM3DSHOP ?</h2>
+  <p>Chaque pièce est imprimée et finie à la main, dans mon atelier, avec passion et rigueur.</p>
+  <a href="apropos.html" class="btn-discover">Découvrir mon histoire →</a>
 </section>
 
 <footer class="site-footer">
