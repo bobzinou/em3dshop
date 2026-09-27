@@ -1,40 +1,84 @@
+/* ========================
+   PAGE LEGALE (CGV / MENTIONS LEGALES)
+   ======================== */
 .legal-page {
-  max-width: 800px;
+  max-width: 900px;
   margin: 40px auto;
-  padding: 30px;
-  background: white;
-  border-radius: 8px;
-  line-height: 1.7;
+  padding: 40px;
+  background-color: #0d0d0d;
+  color: #f5f5f5;
+  border-radius: 12px;
 }
 
 .legal-page h1 {
-  margin-bottom: 30px;
-  border-bottom: 3px solid var(--theme-primary, #ff7518);
+  color: #f5f5f5;
+  font-size: 32px;
+  margin-bottom: 20px;
   padding-bottom: 15px;
+  border-bottom: 3px solid #ff7518;
 }
 
 .legal-page h2 {
+  color: #ff7518;
+  font-size: 22px;
   margin-top: 30px;
-  margin-bottom: 10px;
-  color: var(--theme-primary, #ff7518);
+  margin-bottom: 12px;
 }
 
 .legal-page p {
-  margin-bottom: 10px;
-  color: #333;
+  color: #f5f5f5;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.legal-page ul {
+  color: #f5f5f5;
+  margin: 10px 0 10px 20px;
+  line-height: 1.7;
+}
+
+.legal-page a {
+  color: #ff7518;
+  text-decoration: underline;
+}
+
+.legal-page a:hover {
+  color: #fff;
+}
+
+.legal-page strong {
+  color: #fff;
+}
+
+/* ========================
+   PAGE A PROPOS
+   ======================== */
+.about-hero {
+  background: rgba(255, 117, 24, 0.08);
+  border-left: 4px solid #ff7518;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.about-intro {
+  font-size: 18px;
+  font-style: italic;
+  color: #f5f5f5;
+  margin: 0;
 }
 
 .btn-back {
   display: inline-block;
-  margin-top: 30px;
+  background: #ff7518;
+  color: #fff !important;
   padding: 10px 20px;
-  background: var(--theme-primary, #ff7518);
-  color: white;
-  text-decoration: none;
-  border-radius: 5px;
-  transition: opacity 0.2s;
+  border-radius: 6px;
+  text-decoration: none !important;
+  font-weight: bold;
+  transition: background 0.3s;
 }
 
 .btn-back:hover {
-  opacity: 0.85;
+  background: #e65c00;
 }

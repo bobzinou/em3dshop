@@ -12,6 +12,7 @@
 <header class="site-header">
   <div class="header-inner">
     <a href="/" class="logo">EM3DSHOP</a>
+    <button class="close-btn" onclick="closeOrRedirect()" aria-label="Fermer">✕</button>
   </div>
 </header>
 
@@ -46,7 +47,7 @@
   <h2>5. Délais de livraison</h2>
   <p>
     Les produits étant fabriqués à la demande (impression 3D artisanale), le délai de fabrication
-    et d'expédition est de [X à Y jours ouvrés]. Ce délai vous sera communiqué par email après votre commande.
+    et d'expédition est de 10jours ouvrés. Ce délai vous sera communiqué par email après votre commande.
   </p>
 
   <h2>6. Droit de rétractation</h2>
@@ -63,7 +64,7 @@
   <h2>7. Retours et remboursements</h2>
   <p>
     En cas de produit défectueux ou endommagé pendant le transport, contactez-nous sous 48h avec photos
-    à l'appui à [ton-email@exemple.com]. Un remboursement ou un renvoi du produit sera proposé.
+    à l'appui à emottais@mottaiserwan.fr. Un remboursement ou un renvoi du produit sera proposé.
   </p>
 
   <h2>8. Responsabilité</h2>
@@ -77,14 +78,25 @@
     En cas de litige, une solution amiable sera recherchée avant toute action judiciaire. À défaut,
     les tribunaux français seront seuls compétents.
   </p>
-
-  <a href="/" class="btn-back">← Retour à la boutique</a>
 </main>
 
 <footer class="site-footer">
-  <p>© 2026 EM3DSHOP — Impressions 3D artisanales — France</p>
-  <p><a href="/mentions-legales.html">Mentions légales</a> | <a href="/cgv.html">CGV</a></p>
+  <p>&copy; 2026 EM3DSHOP - Tous droits réservés</p>
+  <p>
+    <a href="mentions-legales.html">Mentions Légales</a> |
+    <a href="cgv.html">CGV</a> |
+    <a href="apropos.html">À propos</a>
+  </p>
 </footer>
+
+<script>
+function closeOrRedirect() {
+  window.close();
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 100);
+}
+</script>
 
 </body>
 </html>

@@ -16,6 +16,63 @@ body {
 }
 
 /* ========================
+   VARIABLES / THEMES
+   ======================== */
+:root {
+  --primary: #ff7518;
+  --bg-secondary: #1a1a1a;
+  --bg: #0d0d0d;
+  --text: #f5f5f5;
+  --border: #ff7518;
+  --card-bg: #1f1f1f;
+}
+
+body[data-theme="halloween"] {
+  --primary: #ff6600;
+  --bg-secondary: #000000;
+  --bg: #1a0d26;
+  --text: #ffcc66;
+  --border: #ff6600;
+  --card-bg: #2a1a3a;
+}
+
+body[data-theme="noel"] {
+  --primary: #c0392b;
+  --bg-secondary: #ffffff;
+  --bg: #0d3320;
+  --text: #ffffff;
+  --border: #c0392b;
+  --card-bg: #145a32;
+}
+
+body[data-theme="figurines"] {
+  --primary: #3498db;
+  --bg-secondary: #1a1a1a;
+  --bg: #1a1a1a;
+  --text: #f5f5f5;
+  --border: #3498db;
+  --card-bg: #22262e;
+}
+
+body[data-theme="hueforge"] {
+  --primary: #9b59b6;
+  --bg-secondary: #1a1a1a;
+  --bg: #1a1a1a;
+  --text: #f5f5f5;
+  --border: #9b59b6;
+  --card-bg: #2a1f33;
+}
+
+body[data-theme="paques"] {
+  --primary: #f7c948;
+  --bg-secondary: #a8e6a3;
+  --bg: #fef9e7;
+  --text: #333333;
+  --border: #f7c948;
+  --card-bg: #ffffff;
+}
+
+/* ========================
    HEADER
    ======================== */
 .site-header {
@@ -66,7 +123,8 @@ body {
   white-space: nowrap;
 }
 
-.theme-btn:hover, .theme-btn.active {
+.theme-btn:hover,
+.theme-btn.active {
   background-color: var(--primary, #ff7518);
   color: var(--bg, #0d0d0d);
 }
@@ -101,7 +159,8 @@ body {
   white-space: nowrap;
 }
 
-.category-btn:hover, .category-btn.active {
+.category-btn:hover,
+.category-btn.active {
   background-color: var(--primary, #ff7518);
   color: var(--bg, #0d0d0d);
   font-weight: bold;
@@ -134,7 +193,7 @@ main {
 
 .product-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 .product-card img {
@@ -165,16 +224,12 @@ main {
 .lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0, 0, 0, 0.9);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
-}
-
-.lightbox.hidden {
-  display: none;
 }
 
 .lightbox-content {
@@ -218,7 +273,7 @@ main {
 
 .lightbox-nav button {
   pointer-events: all;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   color: white;
   border: none;
   font-size: 24px;
@@ -269,11 +324,7 @@ main {
   z-index: 900;
   padding: 20px;
   overflow-y: auto;
-  box-shadow: -5px 0 20px rgba(0,0,0,0.5);
-}
-
-.cart-panel.hidden {
-  display: none;
+  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .cart-header {
@@ -446,6 +497,16 @@ main {
   margin-top: 2px;
 }
 
+.cgu-option a {
+  color: var(--primary, #ff7518);
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.cgu-option a:hover {
+  color: var(--text, #f5f5f5);
+}
+
 /* ========================
    BOUTON PAIEMENT
    ======================== */
@@ -469,12 +530,8 @@ main {
   opacity: 0.85;
 }
 
-#proceed-to-payment.hidden {
-  display: none !important;
-}
-
 /* ========================
-   MODAL PAYPAL - VERSION UNIQUE
+   MODAL PAYPAL
    ======================== */
 .paypal-modal {
   position: fixed;
@@ -488,10 +545,6 @@ main {
   align-items: center;
   justify-content: center;
   padding: 20px;
-}
-
-.paypal-modal.hidden {
-  display: none !important;
 }
 
 .paypal-modal-content {
@@ -542,12 +595,8 @@ main {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 800;
-}
-
-.overlay.hidden {
-  display: none;
 }
 
 /* ========================
@@ -561,6 +610,90 @@ main {
 }
 
 /* ========================
+   CONTACT
+   ======================== */
+.contact-section {
+  max-width: 760px;
+  margin: 40px auto;
+  padding: 28px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.contact-section h2 {
+  margin: 0 0 20px;
+  color: var(--primary);
+  text-align: center;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-group label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 117, 24, 0.35);
+}
+
+.contact-form button[type="submit"] {
+  background-color: var(--primary);
+  color: var(--bg);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
+}
+
+.contact-form button[type="submit"]:hover {
+  opacity: 0.85;
+}
+
+.contact-status {
+  margin: 14px 0 0;
+  min-height: 1.4em;
+  font-weight: 600;
+}
+
+.contact-status.success {
+  color: #66bb6a;
+}
+
+.contact-status.error {
+  color: #ef5350;
+}
+
+/* ========================
    UTILITAIRE GLOBAL
    ======================== */
 .hidden {
@@ -570,7 +703,6 @@ main {
 /* ========================
    📱 RESPONSIVE MOBILE
    ======================== */
-
 @media (max-width: 1024px) {
   .header-inner {
     padding: 12px 15px;
@@ -706,6 +838,17 @@ main {
   }
 }
 
+@media (max-width: 640px) {
+  .contact-section {
+    margin: 24px 10px;
+    padding: 20px 16px;
+  }
+
+  .contact-form {
+    gap: 12px;
+  }
+}
+
 @media (max-width: 480px) {
   .header-inner {
     padding: 8px;
@@ -821,153 +964,4 @@ main {
     width: 16px;
     height: 16px;
   }
-}
-
-/* ========================
-   CONTACT
-   ======================== */
-.contact-section {
-  max-width: 760px;
-  margin: 40px auto;
-  padding: 28px;
-  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-
-.contact-section h2 {
-  margin: 0 0 20px;
-  color: var(--primary);
-  text-align: center;
-}
-
-.contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.form-group label {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 11px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--text);
-  font: inherit;
-  resize: vertical;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255, 117, 24, 0.35);
-}
-
-.contact-form button[type="submit"] {
-  background-color: var(--primary);
-  color: var(--bg);
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 16px;
-  width: 100%;
-}
-
-.contact-form button[type="submit"]:hover {
-  opacity: 0.85;
-}
-
-.contact-status {
-  margin: 14px 0 0;
-  min-height: 1.4em;
-  font-weight: 600;
-}
-
-.contact-status.success {
-  color: #66bb6a;
-}
-
-.contact-status.error {
-  color: #ef5350;
-}
-
-@media (max-width: 640px) {
-  .contact-section {
-    margin: 24px 10px;
-    padding: 20px 16px;
-  }
-
-  .contact-form {
-    gap: 12px;
-  }
-}
-
-:root {
-  --primary: #ff7518;
-  --bg-secondary: #1a1a1a;
-  --bg: #0d0d0d;
-  --text: #f5f5f5;
-  --border: #ff7518;
-  --card-bg: #1f1f1f;
-}
-
-body[data-theme="halloween"] {
-  --primary: #ff6600;
-  --bg-secondary: #000000;
-  --bg: #1a0d26;
-  --text: #ffcc66;
-  --border: #ff6600;
-  --card-bg: #2a1a3a;
-}
-
-body[data-theme="noel"] {
-  --primary: #c0392b;
-  --bg-secondary: #ffffff;
-  --bg: #0d3320;
-  --text: #ffffff;
-  --border: #c0392b;
-  --card-bg: #145a32;
-}
-
-body[data-theme="figurines"] {
-  --primary: #3498db;
-  --bg-secondary: #1a1a1a;
-  --bg: #1a1a1a;
-  --text: #f5f5f5;
-  --border: #3498db;
-  --card-bg: #22262e;
-}
-
-body[data-theme="hueforge"] {
-  --primary: #9b59b6;
-  --bg-secondary: #1a1a1a;
-  --bg: #1a1a1a;
-  --text: #f5f5f5;
-  --border: #9b59b6;
-  --card-bg: #2a1f33;
-}
-
-body[data-theme="paques"] {
-  --primary: #f7c948;
-  --bg-secondary: #a8e6a3;
-  --bg: #fef9e7;
-  --text: #333333;
-  --border: #f7c948;
-  --card-bg: #ffffff;
 }
