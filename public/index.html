@@ -56,39 +56,37 @@
   </div>
 
   <div id="cart-items"></div>
-  
+
   <!-- FORMULAIRE CLIENT -->
   <div class="checkout-form">
     <h3>Infos de livraison</h3>
-    
-    <input 
-      type="text" 
-      id="customer-name" 
-      placeholder="Nom complet" 
+
+    <input
+      type="text"
+      id="customer-name"
+      placeholder="Nom complet"
       required
     >
-    
-    <input 
-      type="email" 
-      id="customer-email" 
-      placeholder="Email" 
+
+    <input
+      type="email"
+      id="customer-email"
+      placeholder="Email"
       required
     >
-    
-    <textarea 
-      id="customer-address" 
+
+    <textarea
+      id="customer-address"
       placeholder="Adresse de livraison"
       rows="3"
     ></textarea>
-	
-    <textarea 
-      id="customer-description" 
+
+    <textarea
+      id="customer-description"
       placeholder="Informations complémentaires"
       rows="4"
     ></textarea>
 
-	
-    
     <!-- CHECKBOX RETRAIT EN MAIN PROPRE -->
     <div class="pickup-option">
       <label>
@@ -96,7 +94,7 @@
         Retrait en main propre (gratuit)
       </label>
     </div>
-    
+
     <!-- CHECKBOX CGV -->
     <div class="cgu-option">
       <label>
@@ -105,13 +103,13 @@
       </label>
     </div>
   </div>
-  
+
   <!-- TOTAUX -->
   <div class="cart-footer">
     <p>Sous-total : <span id="cart-subtotal">0.00€</span></p>
     <p>Livraison : <span id="cart-shipping">3.99€</span></p>
     <p class="cart-total">Total : <span id="cart-total">0.00€</span></p>
-    
+
     <!-- BOUTON PAIEMENT -->
     <button id="proceed-to-payment" class="btn-primary">Passer au paiement</button>
   </div>
@@ -128,8 +126,38 @@
 
 <div id="overlay" class="overlay hidden"></div>
 
+<!-- CONTACT -->
+<section id="contact" class="contact-section">
+  <h2>Une demande spécifique ? Contactez-moi !</h2>
+
+  <form id="contact-form" class="contact-form">
+    <input type="hidden" name="access_key" value="bd8ebe9a-9da4-4bc4-9543-35cb3f581a21">
+    <input type="hidden" name="subject" value="Nouveau message depuis EM3DSHOP">
+    <input type="checkbox" name="botcheck" style="display:none">
+
+    <div class="form-group">
+      <label for="name">Nom</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+
+    <div class="form-group">
+      <label for="message">Message</label>
+      <textarea id="message" name="message" rows="6" required></textarea>
+    </div>
+
+    <button type="submit" class="btn-primary" id="contact-submit">Envoyer le message</button>
+
+    <p id="contact-status" class="contact-status"></p>
+  </form>
+</section>
+
 <footer class="site-footer">
-  <p>© 2026 ME3DSHOP — Impressions 3D artisanales — France</p>
+  <p>© 2026 EM3DSHOP — Impressions 3D artisanales — France</p>
 </footer>
 
 <script src="js/paypal-loader.js"></script>
@@ -138,6 +166,7 @@
 <script src="js/lightbox.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/main.js"></script>
+<script src="js/contact.js"></script>
 
 </body>
 </html>

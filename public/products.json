@@ -82,6 +82,14 @@
       "description": "Figurine de bonhomme de neige, décoration parfaite pour Noël. <strong>Dimensions : environ 5 cm</strong>",
       "images": ["bonhomme-neige-1.png", "bonhomme-neige-2.png", "bonhomme-neige-3.png"]
     },
+	{
+      "id": "santa",
+      "name": "Lot de 2 petites figurines du Père Noël et d'un bonhomme de neige",
+      "category": "Figurines",
+      "price": 4.99,
+      "description": "Lot de 2 petites figurines du Père Noël et d'un bonhomme de neige, décoration parfaite pour Noël.",
+      "images": ["pere-noel.png"]
+    },
     {
       "id": "boule-cerf-sapin",
       "name": "Boule de Noël Cerf",
