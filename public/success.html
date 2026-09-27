@@ -100,27 +100,27 @@
   </div>
 
   <script>
-    // Récupère l'orderId de l'URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('orderId');
+  // Récupère l'orderId de l'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const orderId = urlParams.get('orderId');
+  
+  if (orderId) {
+    document.getElementById("order-id-display").innerHTML = `<strong>Commande :</strong> ${orderId}`;
+  }
+  
+  // Countdown avant redirection
+  let countdown = 3;
+  const countdownEl = document.getElementById("countdown");
+  
+  const timer = setInterval(() => {
+    countdown--;
+    countdownEl.textContent = countdown;
     
-    if (orderId) {
-      document.getElementById("order-id-display").innerHTML = `<strong>Commande :</strong> ${orderId}`;
+    if (countdown <= 0) {
+      clearInterval(timer);
+      window.location.href = "/"; // ✅ redirection au lieu de close()
     }
-    
-    // Countdown avant fermeture
-    let countdown = 3;
-    const countdownEl = document.getElementById("countdown");
-    
-    const timer = setInterval(() => {
-      countdown--;
-      countdownEl.textContent = countdown;
-      
-      if (countdown <= 0) {
-        clearInterval(timer);
-        window.close(); // Ferme la popup
-      }
-    }, 1000);
-  </script>
+  }, 1000);
+</script>
 </body>
 </html>
