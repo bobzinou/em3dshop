@@ -4,8 +4,8 @@
       "id": "citrouilles-lot3",
       "name": "Lot de 3 citrouilles décoratives",
       "category": "Décorations",
-      "price": 8.99,
-      "description": "Lot de 3 citrouilles décoratives imprimées en 3D, parfaites pour votre décoration d'Halloween.",
+      "price": 7.99,
+      "description": "Lot de 3 citrouilles décoratives d'Halloween, plusieurs couleurs disponibles, à préciser lors de la commande. <strong>Dimensions : entre 4 et 5 cm</strong>",
       "images": ["citrouilles.png", "citrouille-2.png"]
     },
     {
@@ -13,14 +13,22 @@
       "name": "Figurine Faucheur",
       "category": "Figurines",
       "price": 3.99,
-      "description": "Figurine du faucheur avec citrouille sculptée, impression 3D détaillée.",
-      "images": ["faucheur-1.png", "faucheur-dos.png"]
+      "description": "Figurine du faucheur avec citrouille sculptée. <strong>Dimensions : environ 8 cm</strong>",
+      "images": ["faucheur-1.jpeg", "faucheur-2.jpeg"]
+    },
+    {
+      "id": "clicker-halloween",
+      "name": "Clicker/Fidget d'Halloween personnalisable",
+      "category": "Décorations",
+      "price": 8.99,
+      "description": "Clicker/Fidget d'Halloween personnalisable. Plusieurs versions existent : 1x3 / 2x2, précisez les couleurs lors du paiement.",
+      "images": ["clicker-1.png", "clicker-2.png"]
     },
     {
       "id": "duo-fantomes",
       "name": "Duo de fantômes éclairés",
       "category": "Décorations",
-      "price": 8.99,
+      "price": 7.99,
       "description": "Duo de fantômes à éclairer (lumière non fournie), idéal pour illuminer votre déco d'Halloween.",
       "images": ["duo-fantomes.png"]
     },
@@ -28,28 +36,141 @@
       "id": "citrouille-tricot",
       "name": "Citrouille effet tricoté",
       "category": "Décorations",
-      "price": 0.01,
-      "description": "Citrouille imprimée en 3D avec un effet tricoté très réaliste.",
-      "images": ["citrouille-tricote.png", "citrouille-tricote-dos.png"]
+      "price": 2.99,
+      "description": "Citrouille avec un effet tricoté très réaliste. <strong>Dimensions : environ 5 cm</strong>",
+      "images": ["citrouille-tricote-1.jpeg", "citrouille-tricote-2.jpeg"]
     },
     {
       "id": "stitch-halloween",
       "name": "Stitch d'Halloween",
       "category": "Figurines",
-      "price": 15.99,
-      "description": "Figurine Stitch version Halloween avec chapeau de sorcier.",
+      "price": 17.99,
+      "description": "Figurine Stitch version Halloween avec chapeau de sorcier. <strong>Dimensions : environ 23 cm</strong>",
       "images": ["stitch-face.png", "stitch-cote.png", "stitch-dos.png"]
     },
-	{
+    {
       "id": "bol-fantome",
       "name": "Bol à bonbons Fantôme",
       "category": "Décorations",
       "price": 6.99,
-      "description": "Bol à bonbons fantôme, idéel pour la récolte d'Halloween !",
+      "description": "Bol à bonbons fantôme, idéal pour la récolte d'Halloween !",
       "images": ["bol-fantome.png"]
+    },
+    {
+      "id": "citrouille-skull",
+      "name": "Citrouille tête de mort noire",
+      "category": "Décorations",
+      "price": 8.99,
+      "description": "Citrouille noire avec têtes de mort, décoration Halloween.",
+      "images": ["citrouille-skull.png"]
+    },
+    {
+      "id": "skull",
+      "name": "Petit squelette décoratif",
+      "category": "Décorations",
+      "price": 2.99,
+      "description": "Petit squelette de décoration pour Halloween. <strong>Dimensions : environ 5 cm</strong>",
+      "images": ["skull.jpeg"]
     }
   ],
-  "noel": [],
+  "noel": [
+    {
+      "id": "bonhomme-neige",
+      "name": "Bonhomme de neige",
+      "category": "Figurines",
+      "price": 3.99,
+      "description": "Figurine de bonhomme de neige, décoration parfaite pour Noël. <strong>Dimensions : environ 5 cm</strong>",
+      "images": ["bonhomme-neige-1.png", "bonhomme-neige-2.png", "bonhomme-neige-3.png"]
+    },
+    {
+      "id": "boule-cerf-sapin",
+      "name": "Boule de Noël Cerf",
+      "category": "Décorations",
+      "price": 3.99,
+      "description": "Boule de Noël décorative motif cerf. <strong>Dimensions : environ 5 cm</strong>",
+      "images": ["boule-cerf-sapin.png"]
+    },
+    {
+      "id": "boule-sapin",
+      "name": "Boule de sapin prénom décorative",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Lot de 4 Boules de Noël à suspendre dans le sapin. Prénoms personnalisable, à préciser lors de la commande",
+      "images": ["boule-sapin-1.png"]
+    },
+    {
+      "id": "cerf",
+      "name": "Figurine Cerf de Noël",
+      "category": "Figurines",
+      "price": 3.99,
+      "description": "Statuette de cerf, idéale pour compléter votre décoration hivernale. <strong>Dimensions : environ 5 cm</strong>",
+      "images": ["cerf-1.png", "cerf-2.png", "cerf-3.png"]
+    },
+    {
+      "id": "chat-noel",
+      "name": "Chat de Noël",
+      "category": "Figurines",
+      "price": 3.99,
+      "description": "Figurine de chat déguisé pour Noël. <strong>Dimensions : environ 5 cm</strong>",
+      "images": ["chat-noel-1.png", "chat-noel-2.png"]
+    },
+    {
+      "id": "maison-noel",
+      "name": "Maison de Noël",
+      "category": "Décorations",
+      "price": 10.99,
+      "description": "Petite maison décorative de Noël, parfaite pour une mise en scène hivernale.",
+      "images": ["maison-noel.png"]
+    },
+    {
+      "id": "mery-christmas-door",
+      "name": "Décoration de porte Merry Christmas",
+      "category": "Décorations",
+      "price": 8.99,
+      "description": "Décoration murale ou de porte 'Merry Christmas'.<strong>Dimensions : 27cms x 11cms</strong> ",
+      "images": ["mery-christmas-door.png"]
+    },
+    {
+      "id": "noel-sapin",
+      "name": "Lot de 4 Boules de Sapin de Noël décoratif personnalisable au choix",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Lot de 4 Boules de Sapin décoratif personnalisable au choix, à préciser lors de la commande les modèles et prénoms.",
+      "images": ["noel-sapin-1.png", "noel-sapin-2.png", "noel-sapin-3.png", "noel-sapin-4.png", "noel-sapin-5.png", "noel-sapin-6.png"]
+    },
+    {
+      "id": "ours",
+      "name": "Ours de Noël",
+      "category": "Figurines",
+      "price": 3.99,
+      "description": "Figurine d'ours en habits de Noël.<strong>Dimensions : environ 5 cm</strong>",
+      "images": ["ours-1.png", "ours-2.png", "ours-3.png"]
+    },
+    {
+      "id": "pingouin",
+      "name": "Pingouin de Noël",
+      "category": "Figurines",
+      "price": 3.99,
+      "description": "Figurine de pingouin décoratif pour Noël. <strong>Dimensions : environ 5 cm</strong>",
+      "images": ["pingouin.png", "pingouin-2.png", "pingouin-3.png"]
+    },
+    {
+      "id": "sapin",
+      "name": "Lot de 3 Sapins décoratif étoiles",
+      "category": "Décorations",
+      "price": 8.99,
+      "description": "Lot de 3 Sapins décoratif avec étoiles. <strong>Dimensions : 17 cm, 11 cm, 8.5 cm</strong>",
+      "images": ["sapin-1.png", "sapin-2.png", "sapin-3.png"]
+    },
+	{
+      "id": "sculpture-cerf",
+      "name": "Lot de 2 Sculptures de cerfs, ",
+      "category": "Décorations",
+      "price": 4.99,
+      "description": "Lot de 2 sculptures de cerfs, idéale pour la décoration de noël. <strong>Dimensions : 15 cm et  10 cm</strong>",
+      "images": ["sculpture-cerf.png"]
+    }
+  ],
   "figurines": [],
   "hueforge": []
 }

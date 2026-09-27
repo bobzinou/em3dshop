@@ -9,7 +9,7 @@ function openLightbox(product) {
   updateLightboxImage();
 
   document.getElementById("lightbox-title").textContent = product.name;
-  document.getElementById("lightbox-desc").textContent = product.description;
+  document.getElementById("lightbox-desc").innerHTML = product.description; // ✅ innerHTML au lieu de textContent
   document.getElementById("lightbox-price").textContent = product.price.toFixed(2) + "€";
 
   document.getElementById("lightbox").classList.remove("hidden");
