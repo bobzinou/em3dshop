@@ -40,7 +40,7 @@ function generateInvoice(order, outputPath) {
       if (order.customer.address) {
         doc.text(order.customer.address, 50, 190);
       } else {
-        doc.text('📍 Retrait en main propre', 50, 190);
+        doc.text('Retrait en main propre', 50, 190);
       }
 
       // Tableau produits

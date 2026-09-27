@@ -4,21 +4,22 @@ require('dotenv').config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Appelé ainsi dans server.js :
-// sendInvoiceEmail(order.customer.email, order.customer.name, invoicePath, order)
 async function sendInvoiceEmail(destinataire, nomClient, cheminPDF, order) {
   try {
+    console.log("📧 Tentative d'envoi vers:", destinataire);
+    console.log("📄 Fichier PDF:", cheminPDF);
+
     const pdfBuffer = fs.readFileSync(cheminPDF);
 
     const { data, error } = await resend.emails.send({
-      from: 'EM3D Shop <onboarding@resend.dev>',
+      from: 'EM3D Shop <contact@em3dshop.fr>', // ✅ domaine vérifié
       to: [destinataire],
       subject: `Votre facture - Commande ${order.orderId}`,
       html: `
         <p>Bonjour ${nomClient || ""},</p>
         <p>Merci pour votre commande <strong>${order.orderId}</strong>.</p>
         <p>Vous trouverez votre facture en pièce jointe.</p>
-        <p>Cordialement,<br>ME3D Shop</p>
+        <p>Cordialement,<br>EM3D Shop</p>
       `,
       attachments: [
         {
@@ -41,12 +42,10 @@ async function sendInvoiceEmail(destinataire, nomClient, cheminPDF, order) {
   }
 }
 
-// Appelé ainsi dans server.js :
-// sendAdminNotification(order)
 async function sendAdminNotification(order) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'EM3D Shop <onboarding@resend.dev>',
+      from: 'EM3D Shop <contact@em3dshop.fr>', // ✅ domaine vérifié
       to: [process.env.EMAIL_USER],
       subject: `🧾 Nouvelle commande ${order.orderId}`,
       html: `
