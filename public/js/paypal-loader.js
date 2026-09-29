@@ -9,7 +9,7 @@ async function loadPayPalSDK() {
     }
 
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${config.clientId}&currency=EUR`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${config.clientId}&currency=EUR&enable-funding=applepay`;
     script.async = true;
 
     script.onload = () => {
