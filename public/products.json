@@ -72,8 +72,8 @@
       "description": "Petit squelette de décoration pour Halloween. <strong>Dimensions : environ 5 cm</strong>",
       "images": ["skull.jpeg"]
     },
-	{
-      "id": "skull",
+    {
+      "id": "skull-test",
       "name": "test",
       "category": "Décorations",
       "price": 0.01,
@@ -90,7 +90,7 @@
       "description": "Figurine de bonhomme de neige, décoration parfaite pour Noël. <strong>Dimensions : environ 5 cm</strong>",
       "images": ["bonhomme-neige-1.png", "bonhomme-neige-2.png", "bonhomme-neige-3.png"]
     },
-	{
+    {
       "id": "santa",
       "name": "Lot de 2 petites figurines du Père Noël et d'un bonhomme de neige",
       "category": "Figurines",
@@ -154,7 +154,7 @@
       "description": "Lot de 4 Boules de Sapin décoratif personnalisable au choix, à préciser lors de la commande les modèles et prénoms.",
       "images": ["noel-sapin-1.png", "noel-sapin-2.png", "noel-sapin-3.png", "noel-sapin-4.png", "noel-sapin-5.png", "noel-sapin-6.png"]
     },
-	{
+    {
       "id": "boule-neige",
       "name": "Lot de 10 Boules de neige de Noël.",
       "category": "Décorations",
@@ -162,7 +162,7 @@
       "description": "Lot de 10 Boules de neige de Noël.",
       "images": ["boule-neige-1.png", "boule-neige-2.png"]
     },
-	{
+    {
       "id": "kinder",
       "name": "Lot de 3 Supports pour Kinder en forme de renne.",
       "category": "Décorations",
@@ -194,7 +194,7 @@
       "description": "Lot de 3 Sapins décoratif avec étoiles. <strong>Dimensions : 17 cm, 11 cm, 8.5 cm</strong>",
       "images": ["sapin-1.png", "sapin-2.png", "sapin-3.png"]
     },
-	{
+    {
       "id": "sculpture-cerf",
       "name": "Lot de 2 Sculptures de cerfs, ",
       "category": "Décorations",
@@ -204,5 +204,94 @@
     }
   ],
   "figurines": [],
-  "hueforge": []
+  "hueforge": [
+    {
+      "id": "spiderman",
+      "name": "Tableau HueForge Spider-Man",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Spider-Man, impression multicouleur en relief façon comics. <strong>Dimensions : 15 x 25 cm</strong>",
+      "images": ["spiderman.png"]
+    },
+    {
+      "id": "venom",
+      "name": "Tableau HueForge Venom",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Venom, effet encre et relief dynamique façon comics. <strong>Dimensions : 15 x 15 cm</strong>",
+      "images": ["venom.png"]
+    },
+	{
+      "id": "venom2",
+      "name": "Tableau HueForge Venom",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Venom, effet encre et relief dynamique façon comics. <strong>Dimensions : 20 x 20 cm</strong>",
+      "images": ["venom-langue-1.png"]
+    },
+    {
+      "id": "luffy",
+      "name": "Tableau HueForge Luffy",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Luffy (One Piece), style artistique éclaboussures de couleurs. <strong>Dimensions : 20 x 20 cm</strong>",
+      "images": ["luffy-1.png"]
+    },
+    {
+      "id": "dbz",
+      "name": "Tableau HueForge Vegeta",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Vegeta (Dragon Ball Z), effet Super Saiyan en relief coloré. <strong>Dimensions : 19 x 23 cm</strong>",
+      "images": ["dbz.png"]
+    },
+    {
+      "id": "ironman",
+      "name": "Tableau HueForge Iron Man",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Iron Man, effet repulsor lumineux façon esquisse. <strong>Dimensions : 20 x 20 cm</strong>",
+      "images": ["ironman.png"]
+    },
+    {
+      "id": "joker",
+      "name": "Tableau HueForge Joker",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Joker, portrait artistique en relief avec livré sur chevalet. <strong>Dimensions : 15 x 20 cm</strong>",
+      "images": ["joker.png"]
+    },
+    {
+      "id": "miles-morales",
+      "name": "Tableau HueForge Miles Morales",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Miles Morales, format vertical avec fond rouge intense, livré sur chevalet. <strong>Dimensions : 13 x 23 cm</strong>",
+      "images": ["miles.png"]
+    },
+    {
+      "id": "pikachu",
+      "name": "Tableau HueForge Pikachu",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Pikachu, effet électrique jaune vif en relief. <strong>Dimensions : 13 x 18 cm</strong>",
+      "images": ["pikachu.png"]
+    },
+	{
+      "id": "spidervenom",
+      "name": "Tableau HueForge Venom & SpiderMan",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Venom & SpiderMan, effet électrique jaune vif en relief. <strong>Dimensions : 20 x 25 cm</strong>",
+      "images": ["venom-spider-1.png","venom-spider-2.png"]
+    },
+    {
+      "id": "stitch",
+      "name": "Tableau HueForge Stitch",
+      "category": "Décorations",
+      "price": 6.99,
+      "description": "Tableau décoratif HueForge Stitch, ambiance florale bleu nuit avec cadre. <strong>Dimensions : 20 x 20 cm</strong>",
+      "images": ["stitch.png"]
+    }
+  ]
 }
