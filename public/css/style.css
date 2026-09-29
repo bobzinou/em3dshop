@@ -221,7 +221,7 @@ main {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.9);
-  display: hidden;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
@@ -319,6 +319,8 @@ main {
   background: var(--card-bg, #1f1f1f);
   z-index: 900;
   box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .cart-header {
