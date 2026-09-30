@@ -100,10 +100,21 @@ function updateCartUI() {
 }
 
 // CALCULER TOTAUX
+// CALCULER TOTAUX
 function updateTotals() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   const pickup = document.getElementById("pickup-checkbox").checked;
-  const shippingCost = pickup ? 0 : 3.99;
+  const relayPoint = window.getSelectedRelayPoint ? window.getSelectedRelayPoint() : null;
+
+  let shippingCost;
+  if (pickup) {
+    shippingCost = 0;
+  } else if (relayPoint) {
+    shippingCost = 0.01; // 👉 adapte ce tarif à ton vrai prix Mondial Relay
+  } else {
+    shippingCost = 0.01;
+  }
+
   const total = subtotal + shippingCost;
 
   document.getElementById("cart-subtotal").textContent = subtotal.toFixed(2) + "€";
@@ -205,7 +216,7 @@ function renderPayPalButton() {
   const address = document.getElementById("customer-address").value.trim();
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const shippingCost = pickup ? 0 : 3.99;
+  const shippingCost = pickup ? 0 : 0.01;
   const total = subtotal + shippingCost;
 
   document.getElementById("paypal-button-container").innerHTML = "";
@@ -268,7 +279,7 @@ function renderPayPalButton() {
             },
             transactionId: result.transactionId,
             total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
-                   (document.getElementById("pickup-checkbox").checked ? 0 : 3.99)
+                   (document.getElementById("pickup-checkbox").checked ? 0 : 0.01)
           })
         });
       })

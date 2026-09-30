@@ -106,15 +106,31 @@
       </label>
     </div>
 
+    <!-- OPTION MONDIAL RELAY -->
+    <div class="relay-option">
+      <label>
+        <input type="checkbox" id="relay-checkbox">
+        Livraison en point relais (Mondial Relay)
+      </label>
+      <button
+        type="button"
+        id="choose-relay-btn"
+        class="btn-secondary hidden"
+      >
+        📍 Choisir un point relais
+      </button>
+      <div id="selected-relay-info" class="selected-relay-info hidden"></div>
+    </div>
+
     <div class="cgu-option">
-  <label>
-    <input type="checkbox" id="cgu-checkbox">
-    J'accepte les
-    <a href="/cgv.html" target="_blank" rel="noopener">CGV</a>
-    et les
-    <a href="/mentions-legales.html" target="_blank" rel="noopener">Mentions légales</a>
-  </label>
-</div>
+      <label>
+        <input type="checkbox" id="cgu-checkbox">
+        J'accepte les
+        <a href="/cgv.html" target="_blank" rel="noopener">CGV</a>
+        et les
+        <a href="/mentions-legales.html" target="_blank" rel="noopener">Mentions légales</a>
+      </label>
+    </div>
   </div>
 
   <!-- TOTAUX -->
@@ -137,8 +153,20 @@
   </div>
 </div>
 
-<div id="overlay" class="overlay hidden"></div>
+<!-- MODAL CHOIX POINT RELAIS -->
+<div id="relay-modal" class="paypal-modal hidden">
+  <div class="paypal-modal-content">
+    <span id="relay-modal-close" class="lightbox-close">&times;</span>
+    <h3>Choisissez votre point relais</h3>
+    <div class="relay-search">
+      <input type="text" id="relay-postal-code" placeholder="Code postal">
+      <button type="button" id="relay-search-btn" class="btn-primary">Rechercher</button>
+    </div>
+    <div id="relay-results" class="relay-results"></div>
+  </div>
+</div>
 
+<div id="overlay" class="overlay hidden"></div>
 <!-- CONTACT -->
 <section id="contact" class="contact-section">
   <h2>Une demande spécifique ? Contactez-moi !</h2>
@@ -186,6 +214,7 @@
 <script src="js/theme.js"></script>
 <script src="js/lightbox.js"></script>
 <script src="js/cart.js"></script>
+<script src="js/relay.js"></script> 
 <script src="js/main.js"></script>
 <script src="js/contact.js"></script>
 

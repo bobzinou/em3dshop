@@ -45,7 +45,14 @@ app.use(limiter);
 
 app.use(limiter);
 	   
-  
+  // ✅ SENDCLOUD CONFIG
+const SENDCLOUD_PUBLIC_KEY = process.env.SENDCLOUD_PUBLIC_KEY;
+const SENDCLOUD_SECRET_KEY = process.env.SENDCLOUD_SECRET_KEY;
+const SENDCLOUD_API = "https://panel.sendcloud.sc/api/v3";
+
+const sendcloudAuth = Buffer.from(
+  `${SENDCLOUD_PUBLIC_KEY}:${SENDCLOUD_SECRET_KEY}`
+).toString("base64");
 
 // ✅ PAYPAL CONFIG - PRODUCTION
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
@@ -89,7 +96,106 @@ app.get("/api/config", (req, res) => {
   }
 });
 	 
- 
+ // ✅ CRÉER UN PARCEL SENDCLOUD (Mondial Relay)
+async function createSendcloudParcel(order) {
+  if (!order.relayPoint) {
+    console.log("ℹ️ Pas de point relais, envoi Sendcloud ignoré");
+    return null;
+  }
+
+  try {
+    const nameParts = (order.customer?.name || "Client").split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ") || firstName;
+
+    const payload = {
+      parcel: {
+        name: order.customer?.name || "Client",
+        company_name: "",
+        email: order.customer?.email || "",
+        telephone: order.customer?.phone || "",
+        address: order.relayPoint.address || "",
+        house_number: "",
+        city: order.relayPoint.city || "",
+        postal_code: order.relayPoint.postalCode || "",
+        country: order.relayPoint.country || "FR",
+        weight: "1.000", // ✅ à ajuster selon ton produit, en kg
+        order_number: order.orderId,
+        to_service_point: order.relayPoint.id,
+        carrier: "mondial_relay",
+        request_label: false // ✅ passe à true si tu veux générer l'étiquette direct
+      }
+    };
+
+    const response = await axios.post(
+      `${SENDCLOUD_API}/parcels`,
+      payload,
+      {
+        headers: {
+          Authorization: `Basic ${sendcloudAuth}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Parcel Sendcloud créé:", response.data.parcel?.id);
+    return response.data.parcel;
+  } catch (error) {
+    console.error("❌ Erreur création parcel Sendcloud:", error.response?.data || error.message);
+    return null;
+  }
+}
+// ✅ RECHERCHE DE POINTS RELAIS MONDIAL RELAY
+// ============================
+// ROUTE : Recherche points relais Mondial Relay via Sendcloud
+// ============================
+app.get("/api/relay-points", async (req, res) => {
+  const { postalCode, country } = req.query;
+
+  console.log("🔍 Requête relay-points reçue:", { postalCode, country });
+
+  if (!postalCode || !country) {
+    return res.status(400).json({ error: "postalCode et country requis" });
+  }
+
+  try {
+    const url = `${SENDCLOUD_API}/service-points?` + new URLSearchParams({
+      country_code: country,
+      address_postal_code: postalCode,
+      carrier_code: "mondial_relay"
+    }).toString();
+
+    console.log("➡️ URL Sendcloud appelée:", url);
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Basic ${sendcloudAuth}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    const results = response.data?.data?.results || [];
+
+    const points = results.map(point => ({
+      id: point.id,
+      name: point.name,
+      company_name: point.name,
+      street: point.address?.street,
+      house_number: point.address?.house_number,
+      postal_code: point.address?.postal_code,
+      city: point.address?.city,
+      country: point.address?.country_code
+    }));
+
+    res.json(points);
+  } catch (err) {
+    console.error("❌ Erreur recherche points relais:", err.response?.data || err.message);
+    res.status(500).json({
+      error: "Erreur API Sendcloud",
+      details: err.response?.data || err.message
+    });
+  }
+});
 
 app.post("/api/order", async (req, res) => {
   console.log("📩 Route /api/order appelée avec:", JSON.stringify(req.body, null, 2));
@@ -128,7 +234,13 @@ app.post("/api/order", async (req, res) => {
     fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
 
     console.log("🧾 Nouvelle commande enregistrée:", order.orderId);
-
+	if (order.relayPoint) {
+  const parcel = await createSendcloudParcel(order);
+  if (parcel) {
+    order.sendcloudParcelId = parcel.id;
+    fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
+  }
+}
     // ✅ Génère la facture PDF
     const invoicePath = path.join(invoicesDir, `facture_${order.orderId}.pdf`);
 
@@ -175,7 +287,6 @@ app.post("/api/order", async (req, res) => {
   }
 });
 
-// ✅ CRÉER UNE COMMANDE PAYPAL
 app.post("/api/paypal/create-order", async (req, res) => {
   try {
     const { items, total } = req.body;
@@ -190,6 +301,28 @@ app.post("/api/paypal/create-order", async (req, res) => {
       return res.status(400).json({ error: "Total invalide" });
     }
 
+    // ✅ Calcul du sous-total réel à partir des items (avec arrondi correct)
+    const itemsTotal = items.reduce(
+      (sum, item) => sum + Math.round(Number(item.price) * Number(item.qty) * 100) / 100,
+      0
+    );
+
+    const roundedItemsTotal = Math.round(itemsTotal * 100) / 100;
+    const shippingCost = Math.round((numericTotal - roundedItemsTotal) * 100) / 100;
+
+    // 🔍 LOG DE DEBUG - à garder temporairement
+    console.log("=== DEBUG PAYPAL ORDER ===");
+    console.log("Items reçus:", JSON.stringify(items, null, 2));
+    console.log("Total envoyé par le front:", numericTotal);
+    console.log("Items total calculé:", roundedItemsTotal);
+    console.log("Shipping calculé:", shippingCost);
+    console.log("==========================");
+
+    if (shippingCost < 0) {
+      console.error("❌ Shipping négatif ! Le total front est inférieur au total des items.");
+      return res.status(400).json({ error: "Incohérence entre total et items" });
+    }
+
     const auth = Buffer.from(
       `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`
     ).toString("base64");
@@ -202,11 +335,15 @@ app.post("/api/paypal/create-order", async (req, res) => {
           {
             amount: {
               currency_code: "EUR",
-              value: numericTotal.toFixed(2),
+              value: (roundedItemsTotal + shippingCost).toFixed(2),
               breakdown: {
                 item_total: {
                   currency_code: "EUR",
-                  value: numericTotal.toFixed(2),
+                  value: roundedItemsTotal.toFixed(2),
+                },
+                shipping: {
+                  currency_code: "EUR",
+                  value: shippingCost.toFixed(2),
                 },
               },
             },
@@ -216,7 +353,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
                 currency_code: "EUR",
                 value: Number(item.price).toFixed(2),
               },
-              quantity: String(item.qty), // ✅ FIX : "qty" au lieu de "quantity" + String()
+              quantity: String(item.qty),
             })),
           },
         ],
@@ -237,9 +374,9 @@ app.post("/api/paypal/create-order", async (req, res) => {
     );
 
     console.log("✅ Commande créée:", response.data.id);
-	   
+
     res.json({
-      orderId: response.data.id, // ✅ FIX : "orderId" au lieu de "id"
+      orderId: response.data.id,
       status: response.data.status,
     });
   } catch (error) {
@@ -248,7 +385,6 @@ app.post("/api/paypal/create-order", async (req, res) => {
       error: error.response?.data?.message || "Erreur serveur",
       details: error.response?.data,
     });
-	   
   }
 });
 
