@@ -79,7 +79,7 @@ ${order.customer.address}`;
     <h3>Montants:</h3>
     <p>
       <strong>Sous-total:</strong> ${order.items.reduce((sum, item) => sum + (item.price * item.qty), 0).toFixed(2)}€<br>
-      <strong>Livraison:</strong> ${order.customer.pickup ? '0.00' : '0.01'}€<br>
+      <strong>Livraison:</strong> ${order.customer.pickup ? '0.00' : '3.50'}€<br>
       <strong>TOTAL:</strong> ${order.total || 'N/A'}€
     </p>
 
