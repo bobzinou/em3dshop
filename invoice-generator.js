@@ -75,7 +75,7 @@ function generateInvoice(order, outputPath) {
 
       // Calcul de la livraison basée sur pickup
       // ✅ FIX : utilise order.customer.pickup au lieu de order.shipping
-      const shippingCost = order.customer?.pickup ? 0 : 0.01;
+      const shippingCost = order.customer?.pickup ? 0 : 3.50;
 
       // Sous-total
       yPosition += 10;

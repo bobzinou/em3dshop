@@ -110,9 +110,9 @@ function updateTotals() {
   if (pickup) {
     shippingCost = 0;
   } else if (relayPoint) {
-    shippingCost = 0.01; // 👉 adapte ce tarif à ton vrai prix Mondial Relay
+    shippingCost = 3.50; // 👉 adapte ce tarif à ton vrai prix Mondial Relay
   } else {
-    shippingCost = 0.01;
+    shippingCost = 3.50;
   }
 
   const total = subtotal + shippingCost;
@@ -226,9 +226,9 @@ function renderPayPalButton() {
   if (pickup) {
     shippingCost = 0;
   } else if (relay && relayPoint) {
-    shippingCost = 0.01;
+    shippingCost = 3.50;
   } else {
-    shippingCost = 0.01;
+    shippingCost = 3.50;
   }
   
   const total = subtotal + shippingCost;
@@ -297,7 +297,7 @@ function renderPayPalButton() {
     relayPoint: window.getSelectedRelayPoint ? window.getSelectedRelayPoint() : null,
     transactionId: result.transactionId,
     total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
-           (document.getElementById("pickup-checkbox").checked ? 0 : 0.01)
+           (document.getElementById("pickup-checkbox").checked ? 0 : 3.50)
   })
 });
       })
