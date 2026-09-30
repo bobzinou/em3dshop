@@ -16,14 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("overlay");
   const pickupCheckbox = document.getElementById("pickup-checkbox");
 
-  if (!relayCheckbox) return; // sécurité si l'élément n'existe pas encore
+  if (!relayCheckbox) return;
 
   // Afficher/masquer le bouton "Choisir un point relais"
   relayCheckbox.addEventListener("change", () => {
     if (relayCheckbox.checked) {
       chooseRelayBtn.classList.remove("hidden");
-
-      // Si retrait main propre coché, on le décoche (incompatible)
       if (pickupCheckbox && pickupCheckbox.checked) {
         pickupCheckbox.checked = false;
         pickupCheckbox.dispatchEvent(new Event("change"));
@@ -130,20 +128,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function selectRelayPoint(point) {
-    selectedRelayPoint = point;
+    // ✅ Enrichis l'objet point avec toutes les infos nécessaires
+    selectedRelayPoint = {
+      id: point.id,
+      name: point.name || point.company_name || "Point Relais",
+      street: point.street || "",
+      house_number: point.house_number || "",
+      postal_code: point.postal_code || "",
+      city: point.city || "",
+      address: `${point.street || ""} ${point.house_number || ""}`.trim()
+    };
 
     selectedRelayInfo.classList.remove("hidden");
     selectedRelayInfo.innerHTML = `
       ✅ Point relais sélectionné :<br>
-      <strong>${point.name || point.company_name || "Point Relais"}</strong><br>
-      ${point.street || ""} ${point.house_number || ""}, ${point.postal_code || ""} ${point.city || ""}
+      <strong>${selectedRelayPoint.name}</strong><br>
+      ${selectedRelayPoint.street} ${selectedRelayPoint.house_number}, ${selectedRelayPoint.postal_code} ${selectedRelayPoint.city}
     `;
+
+    console.log("🎯 Point relais sélectionné:", selectedRelayPoint);
 
     closeRelayModal();
     updateShippingDisplay();
   }
 
-  // Met à jour l'affichage du prix de livraison (délègue à updateTotals() de cart.js)
   function updateShippingDisplay() {
     if (typeof updateTotals === "function") {
       updateTotals();
@@ -154,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.updateShippingDisplay = updateShippingDisplay;
 });
 
-// Expose selectedRelayPoint globalement pour cart.js
+// ✅ Ces fonctions doivent rester HORS du DOMContentLoaded pour être accessibles globalement
 function getSelectedRelayPoint() {
   return selectedRelayPoint;
 }

@@ -282,23 +282,24 @@ function renderPayPalButton() {
 
         // ✅ ENVOIE LE RELAY POINT ET RELAY FLAG
         return fetch("/api/order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: data.orderID,
-            items: cart,
-            customer: {
-              name: document.getElementById("customer-name").value.trim(),
-              email: document.getElementById("customer-email").value.trim(),
-              address: document.getElementById("customer-address").value.trim(),
-              pickup: document.getElementById("pickup-checkbox").checked,
-              relay: document.getElementById("relay-checkbox").checked  // ✅ AJOUTE
-            },
-            relayPoint: relayPoint,  // ✅ C'EST LA CLÉ !
-            transactionId: result.transactionId,
-            total: total.toFixed(2)
-          })
-        });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    orderId: data.orderID,
+    items: cart,
+    customer: {
+      name: document.getElementById("customer-name").value.trim(),
+      email: document.getElementById("customer-email").value.trim(),
+      address: document.getElementById("customer-address").value.trim(),
+      pickup: document.getElementById("pickup-checkbox").checked
+    },
+    // ✅ AJOUTE LE POINT RELAIS
+    relayPoint: window.getSelectedRelayPoint ? window.getSelectedRelayPoint() : null,
+    transactionId: result.transactionId,
+    total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
+           (document.getElementById("pickup-checkbox").checked ? 0 : 0.01)
+  })
+});
       })
       .then(orderRes => {
         if (!orderRes.ok) throw new Error(`HTTP ${orderRes.status}`);

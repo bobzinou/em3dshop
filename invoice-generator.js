@@ -21,13 +21,13 @@ function generateInvoice(order, outputPath) {
       doc.fontSize(11).font('Helvetica').text('Impressions 3D Artisanales', 50, 70);
       doc.text('Le Plessis-Bouchard, France', 50, 85);
 
-      // Titre FACTURE
-      doc.fontSize(18).font('Helvetica-Bold').text('FACTURE', 400, 50);
+      // Titre FACTURE (à droite)
+      doc.fontSize(18).font('Helvetica-Bold').text('FACTURE', 450, 40);
 
-      // Info commande
+      // Info commande (séparée proprement)
       doc.fontSize(10).font('Helvetica');
-      doc.text(`Numéro: ${order.orderId}`, 400, 80);
-      doc.text(`Date: ${new Date(order.date).toLocaleDateString('fr-FR')}`, 400, 95);
+      doc.text(`Numéro: ${order.orderId}`, 450, 70);
+      doc.text(`Date: ${new Date(order.date).toLocaleDateString('fr-FR')}`, 450, 85);
 
       // Séparation
       doc.moveTo(50, 120).lineTo(550, 120).stroke();
@@ -60,18 +60,22 @@ function generateInvoice(order, outputPath) {
       let subtotal = 0;
 
       order.items.forEach(item => {
-  const qty = Number(item.qty || item.quantity || 1);
-  const price = Number(item.price) || 0;
-  const lineTotal = (price * qty).toFixed(2);
-  subtotal += parseFloat(lineTotal);
+        const qty = Number(item.qty || item.quantity || 1);
+        const price = Number(item.price) || 0;
+        const lineTotal = (price * qty).toFixed(2);
+        subtotal += parseFloat(lineTotal);
 
-  doc.text(item.name.substring(0, 35), 50, yPosition, { width: 220 });
-  doc.text(qty.toString(), 280, yPosition);
-  doc.text(price.toFixed(2) + '€', 330, yPosition);
-  doc.text(lineTotal + '€', 430, yPosition);
+        doc.text(item.name.substring(0, 35), 50, yPosition, { width: 220 });
+        doc.text(qty.toString(), 280, yPosition);
+        doc.text(price.toFixed(2) + '€', 330, yPosition);
+        doc.text(lineTotal + '€', 430, yPosition);
 
-  yPosition += 20;
-});
+        yPosition += 20;
+      });
+
+      // Calcul de la livraison basée sur pickup
+      // ✅ FIX : utilise order.customer.pickup au lieu de order.shipping
+      const shippingCost = order.customer?.pickup ? 0 : 0.01;
 
       // Sous-total
       yPosition += 10;
@@ -84,7 +88,6 @@ function generateInvoice(order, outputPath) {
 
       yPosition += 20;
       doc.text(`Livraison:`, 330, yPosition);
-      const shippingCost = order.shipping || 0;
       doc.text(shippingCost.toFixed(2) + '€', 430, yPosition);
 
       // Total
