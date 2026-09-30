@@ -12,7 +12,7 @@ async function sendInvoiceEmail(destinataire, nomClient, cheminPDF, order) {
     const pdfBuffer = fs.readFileSync(cheminPDF);
 
     const { data, error } = await resend.emails.send({
-      from: 'EM3D Shop <contact@em3dshop.fr>', // ✅ domaine vérifié
+      from: 'EM3D Shop <contact@em3dshop.fr>',
       to: [destinataire],
       subject: `Votre facture - Commande ${order.orderId}`,
       html: `
@@ -42,6 +42,7 @@ async function sendInvoiceEmail(destinataire, nomClient, cheminPDF, order) {
   }
 }
 
+// ✅ NOTIFICATION ADMIN AVEC RESEND (pas transporter!)
 async function sendAdminNotification(order) {
   try {
     // Formate les infos de livraison
@@ -86,15 +87,20 @@ ${order.customer.address}`;
     <p><small>Commande reçue le: ${new Date(order.date).toLocaleString('fr-FR')}</small></p>
     `;
 
-    // Envoie l'email à l'admin
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.ADMIN_EMAIL,
+    // ✅ ENVOIE L'EMAIL ADMIN AVEC RESEND
+    const { data, error } = await resend.emails.send({
+      from: 'EM3D Shop <contact@em3dshop.fr>',
+      to: [process.env.ADMIN_EMAIL],
       subject: `🔔 Nouvelle commande: ${order.orderId}`,
       html: emailContent
     });
 
-    console.log("✅ Email admin envoyé");
+    if (error) {
+      console.error('❌ Erreur envoi email admin:', error);
+      return false;
+    }
+
+    console.log("✅ Email admin envoyé:", data.id);
     return true;
   } catch (err) {
     console.error("❌ Erreur envoi email admin:", err.message);
