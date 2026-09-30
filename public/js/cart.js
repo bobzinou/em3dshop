@@ -213,10 +213,24 @@ function renderPayPalButton() {
   const name = document.getElementById("customer-name").value.trim();
   const email = document.getElementById("customer-email").value.trim();
   const pickup = document.getElementById("pickup-checkbox").checked;
+  const relay = document.getElementById("relay-checkbox").checked;
   const address = document.getElementById("customer-address").value.trim();
+  
+  // ✅ RÉCUPÈRE LE POINT RELAIS
+  const relayPoint = window.getSelectedRelayPoint ? window.getSelectedRelayPoint() : null;
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const shippingCost = pickup ? 0 : 0.01;
+  
+  // ✅ MÊME CALCUL DE SHIPPING
+  let shippingCost;
+  if (pickup) {
+    shippingCost = 0;
+  } else if (relay && relayPoint) {
+    shippingCost = 0.01;
+  } else {
+    shippingCost = 0.01;
+  }
+  
   const total = subtotal + shippingCost;
 
   document.getElementById("paypal-button-container").innerHTML = "";
@@ -233,7 +247,8 @@ function renderPayPalButton() {
             name: name,
             email: email,
             address: address,
-            pickup: pickup
+            pickup: pickup,
+            relay: relay  // ✅ AJOUTE RELAY
           }
         })
       })
@@ -265,6 +280,7 @@ function renderPayPalButton() {
           throw new Error("Capture échouée : " + result.error);
         }
 
+        // ✅ ENVOIE LE RELAY POINT ET RELAY FLAG
         return fetch("/api/order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -275,11 +291,12 @@ function renderPayPalButton() {
               name: document.getElementById("customer-name").value.trim(),
               email: document.getElementById("customer-email").value.trim(),
               address: document.getElementById("customer-address").value.trim(),
-              pickup: document.getElementById("pickup-checkbox").checked
+              pickup: document.getElementById("pickup-checkbox").checked,
+              relay: document.getElementById("relay-checkbox").checked  // ✅ AJOUTE
             },
+            relayPoint: relayPoint,  // ✅ C'EST LA CLÉ !
             transactionId: result.transactionId,
-            total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) + 
-                   (document.getElementById("pickup-checkbox").checked ? 0 : 0.01)
+            total: total.toFixed(2)
           })
         });
       })
@@ -288,21 +305,19 @@ function renderPayPalButton() {
         return orderRes.json();
       })
       .then(orderData => {
-  console.log("Order saved:", orderData);
-  
-  if (orderData.success) {
-    // REDIRIGE vers la page de succès
-    window.location.href = "/success.html?orderId=" + orderData.orderId;
-    return;
-  } else {
-    throw new Error(orderData.error || "Erreur enregistrement commande");
-  }
-})
+        console.log("Order saved:", orderData);
+        
+        if (orderData.success) {
+          window.location.href = "/success.html?orderId=" + orderData.orderId;
+          return;
+        } else {
+          throw new Error(orderData.error || "Erreur enregistrement commande");
+        }
+      })
       .catch(err => {
         console.error("Erreur paiement :", err);
         alert("Erreur : " + err.message);
         
-        // Force fermeture même en cas d'erreur
         document.getElementById("paypal-modal").classList.add("hidden");
         document.getElementById("paypal-button-container").innerHTML = "";
         document.getElementById("proceed-to-payment").classList.remove("hidden");
