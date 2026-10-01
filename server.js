@@ -8,7 +8,7 @@ const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
-const { sendInvoiceEmail, sendAdminNotification } = require("./email-sender"); // adapte le chemin
+const { sendInvoiceEmail, sendAdminNotification } = require("./email-sender");
 const app = express();
 
 // CRÉER LES DOSSIERS S'ILS N'EXISTENT PAS (RENDER)
@@ -23,14 +23,12 @@ if (!fs.existsSync(ordersFile)) fs.writeFileSync(ordersFile, JSON.stringify([]))
 
 // TRUST PROXY POUR RENDER
 app.set('trust proxy', 1);
-		   		
 
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
-			
 
-//  RATE LIMIT SANS PROBLÈME IPv6
+// RATE LIMIT SANS PROBLÈME IPv6
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -43,12 +41,11 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.use(limiter);
-	   
-  // ✅ SENDCLOUD CONFIG
+// ✅ SENDCLOUD CONFIG — DEUX VERSIONS D'API DIFFÉRENTES
 const SENDCLOUD_PUBLIC_KEY = process.env.SENDCLOUD_PUBLIC_KEY;
 const SENDCLOUD_SECRET_KEY = process.env.SENDCLOUD_SECRET_KEY;
-const SENDCLOUD_API = "https://panel.sendcloud.sc/api/v3";
+const SENDCLOUD_API_V2 = "https://panel.sendcloud.sc/api/v2"; // pour /parcels
+const SENDCLOUD_API_V3 = "https://panel.sendcloud.sc/api/v3"; // pour /service-points
 
 const sendcloudAuth = Buffer.from(
   `${SENDCLOUD_PUBLIC_KEY}:${SENDCLOUD_SECRET_KEY}`
@@ -62,12 +59,34 @@ const PAYPAL_API = "https://api-m.paypal.com";
 console.log("🔐 PayPal Production Mode");
 console.log(`✅ Client ID: ${PAYPAL_CLIENT_ID?.substring(0, 20)}...`);
 
-
 // ✅ CONFIG PAYPAL POUR LE FRONT
 app.get("/api/paypal-config", (req, res) => {
   res.json({ clientId: PAYPAL_CLIENT_ID });
 });
- 
+
+// ✅ CODES PROMO VALIDES
+const VALID_PROMO_CODES = {
+  "PROMO10": 0.10,
+  "BIENVENUE10": 0.10
+};
+
+function getDiscountPercent(code) {
+  if (!code) return 0;
+  const normalized = code.trim().toUpperCase();
+  return VALID_PROMO_CODES[normalized] || 0;
+}
+
+// ✅ VALIDATION CODE PROMO
+app.post("/api/validate-promo", (req, res) => {
+  const { code } = req.body;
+  const discountPercent = getDiscountPercent(code);
+
+  if (discountPercent > 0) {
+    res.json({ valid: true, discountPercent });
+  } else {
+    res.json({ valid: false, discountPercent: 0 });
+  }
+});
 
 // ✅ LISTE DES PRODUITS
 app.get("/api/products", (req, res) => {
@@ -80,7 +99,7 @@ app.get("/api/products", (req, res) => {
   }
 });
 
-// ✅ CONFIG GÉNÉRALE (thèmes, couleurs, livraison...)
+// ✅ CONFIG GÉNÉRALE
 app.get("/api/config", (req, res) => {
   try {
     const configPath = path.join(__dirname, "public/config.json");
@@ -95,8 +114,8 @@ app.get("/api/config", (req, res) => {
     res.status(500).json({ error: "Impossible de charger la config" });
   }
 });
-	 
- // ✅ CRÉER UN PARCEL SENDCLOUD (Mondial Relay)
+
+// ✅ CRÉER UN PARCEL SENDCLOUD (API v2)
 async function createSendcloudParcel(order) {
   if (!order.relayPoint) {
     console.log("ℹ️ Pas de point relais, envoi Sendcloud ignoré");
@@ -104,31 +123,26 @@ async function createSendcloudParcel(order) {
   }
 
   try {
-    const nameParts = (order.customer?.name || "Client").split(" ");
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(" ") || firstName;
-
     const payload = {
       parcel: {
         name: order.customer?.name || "Client",
         company_name: "",
         email: order.customer?.email || "",
         telephone: order.customer?.phone || "",
-        address: order.relayPoint.address || "",
-        house_number: "",
+        address: order.relayPoint.street || order.relayPoint.address || "",
+        house_number: order.relayPoint.house_number || "",
         city: order.relayPoint.city || "",
-        postal_code: order.relayPoint.postalCode || "",
+        postal_code: order.relayPoint.postal_code || order.relayPoint.postalCode || "",
         country: order.relayPoint.country || "FR",
-        weight: "1.000", // ✅ à ajuster selon ton produit, en kg
+        weight: "1.000",
         order_number: order.orderId,
-        to_service_point: order.relayPoint.id,
-        carrier: "mondial_relay",
-        request_label: false // ✅ passe à true si tu veux générer l'étiquette direct
+        to_service_point: parseInt(order.relayPoint.id, 10),
+        request_label: false
       }
     };
 
     const response = await axios.post(
-      `${SENDCLOUD_API}/parcels`,
+      `${SENDCLOUD_API_V2}/parcels`, // ✅ v2 pour les parcels
       payload,
       {
         headers: {
@@ -145,9 +159,9 @@ async function createSendcloudParcel(order) {
     return null;
   }
 }
-// ✅ RECHERCHE DE POINTS RELAIS MONDIAL RELAY
+
 // ============================
-// ROUTE : Recherche points relais Mondial Relay via Sendcloud
+// ROUTE : Recherche points relais Mondial Relay via Sendcloud (API v3)
 // ============================
 app.get("/api/relay-points", async (req, res) => {
   const { postalCode, country } = req.query;
@@ -159,7 +173,7 @@ app.get("/api/relay-points", async (req, res) => {
   }
 
   try {
-    const url = `${SENDCLOUD_API}/service-points?` + new URLSearchParams({
+    const url = `${SENDCLOUD_API_V3}/service-points?` + new URLSearchParams({
       country_code: country,
       address_postal_code: postalCode,
       carrier_code: "mondial_relay"
@@ -189,7 +203,8 @@ app.get("/api/relay-points", async (req, res) => {
 
     res.json(points);
   } catch (err) {
-    console.error("❌ Erreur recherche points relais:", err.response?.data || err.message);
+    console.error("❌ Erreur recherche points relais - STATUS:", err.response?.status);
+    console.error("❌ Erreur recherche points relais - DATA:", JSON.stringify(err.response?.data, null, 2));
     res.status(500).json({
       error: "Erreur API Sendcloud",
       details: err.response?.data || err.message
@@ -203,7 +218,6 @@ app.post("/api/order", async (req, res) => {
     const order = req.body;
     order.date = new Date().toISOString();
 
-    // ✅ Génère un orderId s'il n'existe pas
     if (!order.orderId) {
       order.orderId = "ME3D-" + Date.now();
     }
@@ -211,7 +225,6 @@ app.post("/api/order", async (req, res) => {
     const ordersPath = path.join(__dirname, "data/orders.json");
     let orders = [];
 
-    // ✅ FIX : lecture robuste (gère fichier vide ou corrompu)
     if (fs.existsSync(ordersPath)) {
       const fileContent = fs.readFileSync(ordersPath, "utf-8").trim();
 
@@ -227,24 +240,23 @@ app.post("/api/order", async (req, res) => {
           orders = [];
         }
       }
-      // si fileContent est vide, orders reste = []
     }
 
     orders.push(order);
     fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
 
     console.log("🧾 Nouvelle commande enregistrée:", order.orderId);
-	if (order.relayPoint) {
-  const parcel = await createSendcloudParcel(order);
-  if (parcel) {
-    order.sendcloudParcelId = parcel.id;
-    fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
-  }
-}
-    // ✅ Génère la facture PDF
+    if (order.relayPoint) {
+      const parcel = await createSendcloudParcel(order);
+      if (parcel) {
+        order.sendcloudParcelId = parcel.id;
+        fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2));
+      }
+    }
+
     const invoicePath = path.join(invoicesDir, `facture_${order.orderId}.pdf`);
 
-        try {
+    try {
       await generateInvoice(order, invoicePath);
       console.log("✅ Facture PDF générée:", invoicePath);
 
@@ -266,7 +278,6 @@ app.post("/api/order", async (req, res) => {
         console.warn("⚠️ Pas d'email client, envoi ignoré");
       }
 
-      // ✅ NOUVEAU : notification admin
       const adminNotified = await sendAdminNotification(order);
       if (adminNotified) {
         console.log("✅ Notification admin envoyée");
@@ -289,37 +300,39 @@ app.post("/api/order", async (req, res) => {
 
 app.post("/api/paypal/create-order", async (req, res) => {
   try {
-    const { items, total } = req.body;
+    const { items, total, promoCode } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: "Panier vide" });
     }
 
-    const numericTotal = Number(total);
-
-    if (isNaN(numericTotal) || numericTotal <= 0) {
-      return res.status(400).json({ error: "Total invalide" });
-    }
-
-    // ✅ Calcul du sous-total réel à partir des items (avec arrondi correct)
     const itemsTotal = items.reduce(
       (sum, item) => sum + Math.round(Number(item.price) * Number(item.qty) * 100) / 100,
       0
     );
-
     const roundedItemsTotal = Math.round(itemsTotal * 100) / 100;
-    const shippingCost = Math.round((numericTotal - roundedItemsTotal) * 100) / 100;
 
-    // 🔍 LOG DE DEBUG - à garder temporairement
+    const discountPercent = getDiscountPercent(promoCode);
+    const discountAmount = Math.round(roundedItemsTotal * discountPercent * 100) / 100;
+    const itemsTotalAfterDiscount = Math.round((roundedItemsTotal - discountAmount) * 100) / 100;
+
+    const numericTotal = Number(total);
+    if (isNaN(numericTotal) || numericTotal <= 0) {
+      return res.status(400).json({ error: "Total invalide" });
+    }
+
+    const shippingCost = Math.round((numericTotal - itemsTotalAfterDiscount) * 100) / 100;
+
     console.log("=== DEBUG PAYPAL ORDER ===");
-    console.log("Items reçus:", JSON.stringify(items, null, 2));
-    console.log("Total envoyé par le front:", numericTotal);
-    console.log("Items total calculé:", roundedItemsTotal);
+    console.log("Items total brut:", roundedItemsTotal);
+    console.log("Code promo:", promoCode, "-> réduction:", discountPercent * 100, "%");
+    console.log("Montant réduction:", discountAmount);
+    console.log("Items total après réduction:", itemsTotalAfterDiscount);
     console.log("Shipping calculé:", shippingCost);
     console.log("==========================");
 
     if (shippingCost < 0) {
-      console.error("❌ Shipping négatif ! Le total front est inférieur au total des items.");
+      console.error("❌ Shipping négatif ! Incohérence total front / items.");
       return res.status(400).json({ error: "Incohérence entre total et items" });
     }
 
@@ -327,36 +340,42 @@ app.post("/api/paypal/create-order", async (req, res) => {
       `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`
     ).toString("base64");
 
+    const finalTotal = itemsTotalAfterDiscount + shippingCost;
+
+    const purchaseUnit = {
+      amount: {
+        currency_code: "EUR",
+        value: finalTotal.toFixed(2),
+        breakdown: {
+          item_total: {
+            currency_code: "EUR",
+            value: roundedItemsTotal.toFixed(2),
+          },
+          shipping: {
+            currency_code: "EUR",
+            value: shippingCost.toFixed(2),
+          },
+          discount: {
+            currency_code: "EUR",
+            value: discountAmount.toFixed(2),
+          },
+        },
+      },
+      items: items.map((item) => ({
+        name: item.name,
+        unit_amount: {
+          currency_code: "EUR",
+          value: Number(item.price).toFixed(2),
+        },
+        quantity: String(item.qty),
+      })),
+    };
+
     const response = await axios.post(
       `${PAYPAL_API}/v2/checkout/orders`,
       {
         intent: "CAPTURE",
-        purchase_units: [
-          {
-            amount: {
-              currency_code: "EUR",
-              value: (roundedItemsTotal + shippingCost).toFixed(2),
-              breakdown: {
-                item_total: {
-                  currency_code: "EUR",
-                  value: roundedItemsTotal.toFixed(2),
-                },
-                shipping: {
-                  currency_code: "EUR",
-                  value: shippingCost.toFixed(2),
-                },
-              },
-            },
-            items: items.map((item) => ({
-              name: item.name,
-              unit_amount: {
-                currency_code: "EUR",
-                value: Number(item.price).toFixed(2),
-              },
-              quantity: String(item.qty),
-            })),
-          },
-        ],
+        purchase_units: [purchaseUnit],
         application_context: {
           return_url: `${process.env.RETURN_URL || "http://localhost:3000"}/success`,
           cancel_url: `${process.env.RETURN_URL || "http://localhost:3000"}/cancel`,
@@ -378,6 +397,7 @@ app.post("/api/paypal/create-order", async (req, res) => {
     res.json({
       orderId: response.data.id,
       status: response.data.status,
+      discountApplied: discountAmount,
     });
   } catch (error) {
     console.error("❌ Erreur création:", JSON.stringify(error.response?.data, null, 2) || error.message);
@@ -391,13 +411,10 @@ app.post("/api/paypal/create-order", async (req, res) => {
 // ✅ CAPTURER LA COMMANDE PAYPAL
 app.post("/api/paypal/capture-order", async (req, res) => {
   try {
-    const { orderId } = req.body; // ✅ le front envoie "orderId" (minuscule d)
-				  
+    const { orderId } = req.body;
 
     if (!orderId) {
       return res.status(400).json({ error: "Order ID manquant" });
-			 
-	   
     }
 
     const auth = Buffer.from(
@@ -421,9 +438,9 @@ app.post("/api/paypal/capture-order", async (req, res) => {
 
     console.log("✅ Paiement capturé:", status, "| Transaction:", transactionId);
     res.json({
-      success: status === "COMPLETED", // ✅ ton front vérifie "result.success"
+      success: status === "COMPLETED",
       status: status,
-      transactionId: transactionId,     // ✅ ton front utilise "result.transactionId"
+      transactionId: transactionId,
     });
   } catch (error) {
     console.error("❌ Erreur capture:", error.response?.data || error.message);
@@ -438,11 +455,11 @@ app.post("/api/paypal/capture-order", async (req, res) => {
 app.get("/success", (req, res) => {
   res.sendFile(path.join(__dirname, "public/success"));
 });
-   
+
 app.get("/cancel", (req, res) => {
   res.sendFile(path.join(__dirname, "public/cancel.html"));
 });
-				
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
@@ -451,7 +468,7 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Serveur lancé sur le port ${PORT}`);
-  console.log(`📍 http://localhost:${PORT}`);  
+  console.log(`📍 http://localhost:${PORT}`);
 });
 
 module.exports = app;
