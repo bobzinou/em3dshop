@@ -71,15 +71,8 @@
       "price": 2.99,
       "description": "Petit squelette de décoration pour Halloween. <strong>Dimensions : environ 5 cm</strong>",
       "images": ["skull.jpeg"]
-    },
-    {
-      "id": "test",
-      "name": "Petit squelette décoratif",
-      "category": "Décorations",
-      "price": 0.01,
-      "description": "Petit squelette de décoration pour Halloween. <strong>Dimensions : environ 5 cm</strong>",
-      "images": ["skull.jpeg"]
     }
+    
   ],
   "noel": [
     {
